@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경기고 2026 진로·과목 설계 대시보드</title>
+<style>
+  :root{
+    --bg:#0f1729; --panel:#16213a; --panel2:#1d2b48;
+    --line:#2a3a5c; --txt:#e8eefc; --sub:#9fb0d0; --accent:#4f8cff;
+    --eng:#ff6b6b; --nat:#34d399; --soc:#fbbf24; --hum:#a78bfa;
+    --chip:#22324f; --ok:#34d399; --warn:#fbbf24; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Malgun Gothic',-apple-system,system-ui,sans-serif;
+    background:linear-gradient(160deg,#0b1120,#101a30);color:var(--txt);line-height:1.55;padding:24px;min-height:100vh}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{text-align:center;margin-bottom:8px}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .lead{color:var(--sub);font-size:14px;margin-top:6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:18px}
+  .sec-title{font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  .seg{display:flex;gap:8px;background:var(--chip);padding:5px;border-radius:12px}
+  .seg button{background:transparent;border:0;color:var(--sub);padding:9px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .seg button.on{background:var(--accent);color:#fff}
+  .fields{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:860px){.fields{grid-template-columns:repeat(2,1fr)}}
+  .field{border:1.5px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.18s;background:var(--panel2);position:relative;overflow:hidden}
+  .field:hover{transform:translateY(-3px)}
+  .field .bar{position:absolute;left:0;top:0;bottom:0;width:5px}
+  .field h3{font-size:16px;margin-bottom:4px}
+  .field p{font-size:12px;color:var(--sub)}
+  .field.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+  .f-eng .bar{background:var(--eng)} .f-nat .bar{background:var(--nat)}
+  .f-soc .bar{background:var(--soc)} .f-hum .bar{background:var(--hum)}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .road{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:760px){.road{grid-template-columns:repeat(2,1fr)}}
+  .term{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;min-height:120px}
+  .term h4{font-size:13px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .pill{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:11.5px;margin:3px 3px 0 0}
+  .pill.rec{border-color:var(--accent);color:#cfe0ff}
+  .note{font-size:13px;color:var(--sub)}
+  .uni{margin-top:8px}
+  .uni li{margin:7px 0;font-size:13.5px;list-style:none;padding-left:16px;position:relative}
+  .uni li::before{content:"▸";position:absolute;left:0;color:var(--accent)}
+  .builder{margin-top:8px}
+  .pool-group{margin-bottom:14px}
+  .pool-group .gh{font-size:12.5px;font-weight:700;color:var(--sub);margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center}
+  .rule{font-size:11px;color:var(--warn);font-weight:600}
+  .pool{display:flex;flex-wrap:wrap;gap:7px}
+  .opt{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:7px 10px;font-size:12.5px;cursor:pointer;transition:.12s;user-select:none}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .opt.rec::after{content:"★";color:var(--warn);margin-left:5px;font-size:11px}
+  .opt.sel.rec::after{color:#fff2c2}
+  .tag{font-size:10px;opacity:.6;margin-left:4px}
+  .summary{position:sticky;top:16px}
+  .meter{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0}
+  .meter b{font-size:22px}
+  .bar2{height:8px;background:var(--chip);border-radius:6px;overflow:hidden;margin-top:4px}
+  .bar2 i{display:block;height:100%;background:var(--accent);width:0;transition:.3s}
+  .matchbox{margin-top:12px;font-size:13px}
+  .matchbox .mrow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .ok{color:var(--ok)} .warnc{color:var(--warn)} .badc{color:var(--bad)}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:13px;margin-top:12px;width:100%}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--sub)}
+  footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;line-height:1.7}
+  .legend{font-size:11.5px;color:var(--sub);margin-top:6px}
+  .selected-list{font-size:12px;color:var(--sub);margin-top:8px;max-height:140px;overflow:auto}
+  .selected-list span{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 7px;margin:2px;font-size:11px}
+  .hl{color:var(--txt);font-weight:600}
+  .rbtn{margin-left:6px;cursor:pointer;font-size:13px;filter:grayscale(.3)}
+  .opt:hover .rbtn{filter:none}
+  .modal-bg{position:fixed;inset:0;background:rgba(5,9,18,.78);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 16px;overflow:auto}
+  .modal-bg.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:760px;width:100%;padding:24px;position:relative;animation:pop .18s ease}
+  @keyframes pop{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  .modal h2{font-size:20px;margin-bottom:2px}
+  .modal .mtag{font-size:12px;color:var(--sub);margin-bottom:14px}
+  .mblock{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  .mblock h3{font-size:14px;color:var(--accent);margin-bottom:8px}
+  .topic{font-size:13.5px;margin:6px 0;padding-left:16px;position:relative}
+  .topic::before{content:"🔎";position:absolute;left:-2px;font-size:11px}
+  .design{font-size:13px;line-height:1.7}
+  .design b{color:var(--txt)}
+  .src{display:block;font-size:13px;margin:7px 0;padding:8px 10px;background:var(--chip);border-radius:8px;border:1px solid var(--line);text-decoration:none;color:var(--txt)}
+  .src:hover{border-color:var(--accent)}
+  .src .meta{color:var(--sub);font-size:11.5px}
+  .src .go{float:right;color:var(--accent);font-size:11.5px}
+  .mclose{position:absolute;top:14px;right:16px;background:var(--chip);border:1px solid var(--line);color:var(--txt);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px}
+  .disc{font-size:11.5px;color:var(--sub);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎓 경기고등학교 2026 진로·선택과목 설계 대시보드</h1>
+    <p class="lead">2학년 1학기 ~ 3학년 2학기 선택과목을 진로 계열에 맞춰 설계하고, 학점·이수 조건을 실시간으로 점검하세요.</p>
+  </header>
+
+  <!-- 1. 트랙 -->
+  <div class="card">
+    <div class="sec-title">STEP 1 · 교육과정 선택</div>
+    <div class="row" style="align-items:center;gap:16px">
+      <div class="seg" id="trackSeg">
+        <button data-t="ilban" class="on">일반과정</button>
+        <button data-t="science">과학중점과정</button>
+      </div>
+      <span class="note" id="trackDesc">인문·사회·자연 전 계열을 폭넓게 설계할 수 있는 표준 과정</span>
+    </div>
+  </div>
+
+  <!-- 2. 계열 -->
+  <div class="card">
+    <div class="sec-title">STEP 2 · 진로 계열 선택 (추천 로드맵 자동 표시)</div>
+    <div class="fields" id="fields"></div>
+    <div class="legend">카드를 누르면 해당 계열 추천 과목이 ★ 표시되고 학기별 로드맵이 채워집니다.</div>
+  </div>
+
+  <!-- 3. 로드맵 + 진학 -->
+  <div class="card">
+    <div class="sec-title">STEP 3 · 학기별 추천 로드맵 & 대학 진학 설계</div>
+    <div class="grid2">
+      <div>
+        <div class="road" id="road"></div>
+        <p class="legend" style="margin-top:10px">※ 음영 과목은 계열 핵심 추천 과목입니다. STEP 4에서 직접 조합을 바꿀 수 있습니다.</p>
+      </div>
+      <div>
+        <h4 style="font-size:15px;margin-bottom:6px" id="uniTitle">진로·진학 방향</h4>
+        <p class="note" id="uniLead"></p>
+        <ul class="uni" id="uniList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 빌더 -->
+  <div class="card">
+    <div class="sec-title">STEP 4 · 나만의 과목 조합 설계하기 &nbsp;<span style="color:var(--accent);text-transform:none;font-weight:600">🔬 표시 과목은 클릭 시 수행평가 탐구주제·설계·도서·논문 제공</span></div>
+    <div class="grid2">
+      <div class="builder" id="builder"></div>
+      <div>
+        <div class="summary card" style="margin-top:0;background:var(--panel2)">
+          <div class="sec-title" style="margin-bottom:8px">이수 현황</div>
+          <div class="meter"><span>선택 학점(2~3학년 선택)</span><b><span id="credits">0</span><span style="font-size:13px;color:var(--sub)">학점</span></b></div>
+          <div class="bar2"><i id="credBar"></i></div>
+          <div class="legend" id="credTarget"></div>
+          <div class="matchbox" id="match"></div>
+          <div class="legend" id="recMatch" style="margin-top:10px"></div>
+          <div class="selected-list" id="selList"></div>
+          <button class="btn" onclick="window.print()">📄 내 설계 인쇄 / PDF 저장</button>
+          <button class="btn ghost" id="resetBtn">선택 초기화</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    출처: 「2026학년도 경기고등학교 학교교육과정 편성·운영·평가 계획」 교육과정 편제표·단위배당표 기준<br>
+    본 대시보드의 진학 방향은 일반적 가이드이며, 최종 과목 선택은 담임·진로교사와 상담 후 결정하세요. · 2022 개정 교육과정
+  </footer>
+
+  <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <button class="mclose" onclick="closeModal()">✕</button>
+      <h2 id="mTitle"></h2>
+      <div class="mtag" id="mSub"></div>
+      <div class="mblock"><h3>📌 수행평가 탐구 주제</h3><div id="mTopics"></div></div>
+      <div class="mblock"><h3>🧪 탐구 설계 (대표 주제)</h3><div class="design" id="mDesign"></div></div>
+      <div class="mblock"><h3>📚 추천 도서 (검색 가능)</h3><div id="mBooks"></div></div>
+      <div class="mblock"><h3>📄 추천 논문 (RISS·DBpia·KCI)</h3><div id="mPapers"></div></div>
+      <p class="disc">※ 도서·논문은 검색으로 확인되는 실제 자료입니다. 링크가 막힌 경우 제목·저자로 RISS/교보문고에서 재검색하세요. 학생 수준·관심에 맞게 주제를 변형해 활용하세요.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 과목 데이터 (편제표/단위배당표 기준) =====
+   type: 일반/진로/융합/공통  cat: 교과군  cr: 운영학점 */
+const C = (name,cat,type,cr)=>({name,cat,type,cr});
+
+/* 일반과정 선택 과목 풀 (2~3학년) */
+const ILBAN = {
+  "2학년 (택5 + 택5, 30학점)": [
+    C("주제 탐구 독서","국어","진로",3), C("독서 토론과 글쓰기","국어","융합",3),
+    C("경제 수학","수학","진로",3), C("이산 수학","수학","진로",3), C("기하","수학","진로",3), C("고급 대수","수학","진로",3),
+    C("영미 문학 읽기","영어","진로",3), C("미디어 영어","영어","융합",3),
+    C("세계사","사회","일반",3), C("윤리와 사상","사회","진로",3), C("세계시민과 지리","사회","일반",3),
+    C("정치","사회","진로",3), C("국제 관계의 이해","사회","진로",3), C("동아시아 역사 기행","사회","진로",3),
+    C("현대사회와 윤리","사회","일반",3), C("여행지리","사회","융합",3), C("도시의 미래 탐구","사회","진로",3),
+    C("법과 사회","사회","진로",3), C("경제","사회","진로",3),
+    C("물리학","과학","일반",3), C("화학","과학","일반",3), C("생명과학","과학","일반",3), C("지구과학","과학","일반",3),
+    C("고급 화학","과학","진로",3), C("역학과 에너지","과학","진로",3), C("물질과 에너지","과학","진로",3),
+    C("세포와 물질대사","과학","진로",3), C("행성우주과학","과학","진로",3), C("고급 물리학","과학","진로",3),
+    C("정보","정보","일반",3), C("인공지능 기초","정보","진로",3),
+    C("독일어권 문화","제2외국어","융합",3), C("중국 문화","제2외국어","융합",3),
+    C("독일어","제2외국어","일반",3), C("중국어","제2외국어","일반",3),
+  ],
+  "3학년 (택5 + 택7, 36학점)": [
+    C("언어생활 탐구","국어","융합",3), C("문학과 영상","국어","진로",3),
+    C("미적분Ⅱ","수학","진로",3), C("인공지능 수학","수학","진로",3), C("수학과제 탐구","수학","융합",3),
+    C("실용 통계","수학","융합",3), C("수학과 문화","수학","융합",3),
+    C("영어 독해와 작문","영어","일반",3), C("심화 영어","영어","진로",3),
+    C("현대 세계의 변화","사회","진로",3), C("인문학과 윤리","사회","진로",3), C("한국지리 탐구","사회","진로",3),
+    C("사회와 문화","사회","일반",3), C("금융과 경제생활","사회","융합",3),
+    C("역사로 탐구하는 현대세계","사회","융합",3), C("윤리문제 탐구","사회","융합",3),
+    C("기후변화와 지속가능한 세계","사회","융합",3), C("사회문제 탐구","사회","융합",3),
+    C("전자기와 양자","과학","진로",3), C("화학 반응의 세계","과학","진로",3), C("생물의 유전","과학","진로",3),
+    C("지구시스템과학","과학","진로",3), C("융합과학 탐구","과학","융합",3),
+    C("기후변화와 환경생태","과학","융합",3), C("과학의 역사와 문화","과학","융합",3),
+    C("데이터 과학","정보","진로",3), C("소프트웨어와 생활","정보","융합",3),
+    C("독일어 회화","제2외국어","진로",3), C("중국어 회화","제2외국어","진로",3),
+    C("심화 독일어","제2외국어","진로",3), C("심화 중국어","제2외국어","진로",3),
+  ]
+};
+
+/* 과학중점과정 선택 과목 풀 */
+const SCIENCE = {
+  "2학년 (택5 + 수·과 택4, 27학점)": [
+    C("경제 수학","수학","진로",3), C("이산 수학","수학","진로",3), C("기하","수학","진로",3), C("고급 대수","수학","진로",3),
+    C("물리학","과학","일반",3), C("화학","과학","일반",3), C("생명과학","과학","일반",3), C("지구과학","과학","일반",3),
+    C("고급 화학","과학","진로",3), C("역학과 에너지","과학","진로",3), C("물질과 에너지","과학","진로",3),
+    C("세포와 물질대사","과학","진로",3), C("행성우주과학","과학","진로",3), C("고급 물리학","과학","진로",3),
+    C("정보","정보","일반",3), C("인공지능 기초","정보","진로",3),
+    C("독일어","제2외국어","일반",3), C("중국어","제2외국어","일반",3),
+  ],
+  "3학년 (수학 + 택5 + 택7)": [
+    C("미적분Ⅱ","수학","진로",3), C("인공지능 수학","수학","진로",3), C("수학과제 탐구","수학","융합",3),
+    C("실용 통계","수학","융합",3), C("수학과 문화","수학","융합",3),
+    C("전자기와 양자","과학","진로",3), C("화학 반응의 세계","과학","진로",3), C("생물의 유전","과학","진로",3),
+    C("지구시스템과학","과학","진로",3), C("융합과학 탐구","과학","융합",3),
+    C("기후변화와 환경생태","과학","융합",3), C("과학의 역사와 문화","과학","융합",3),
+    C("데이터 과학","정보","진로",3), C("소프트웨어와 생활","정보","융합",3),
+    C("문학과 영상","국어","진로",3), C("심화 영어","영어","진로",3),
+    C("역사로 탐구하는 현대세계","사회","융합",3), C("윤리문제 탐구","사회","융합",3),
+    C("기후변화와 지속가능한 세계","사회","융합",3), C("사회문제 탐구","사회","융합",3),
+    C("심화 독일어","제2외국어","진로",3), C("심화 중국어","제2외국어","진로",3),
+  ]
+};
+
+/* 계열별 추천 과목 + 학기 로드맵 + 진학 */
+const FIELDS = {
+  eng:{ label:"공학·의약·AI", cls:"f-eng", desc:"기계·전자·컴퓨터공학, 의예·약학, AI·데이터",
+    rec:["미적분Ⅰ(공통선택)","기하","미적분Ⅱ","고급 대수","물리학","화학","생명과학","역학과 에너지","물질과 에너지","전자기와 양자","화학 반응의 세계","고급 물리학","고급 화학","인공지능 기초","인공지능 수학","데이터 과학","융합과학 탐구"],
+    road:{
+      "2-1":["미적분Ⅰ","물리학","화학","기하"],
+      "2-2":["역학과 에너지","물질과 에너지","고급 대수","인공지능 기초"],
+      "3-1":["미적분Ⅱ","전자기와 양자","화학 반응의 세계","인공지능 수학"],
+      "3-2":["고급 물리학·고급 화학","데이터 과학","융합과학 탐구","심화 영어"]
+    },
+    uniLead:"수학·과학 위계 과목을 끝까지 이수해 '깊이'를 증명하는 것이 핵심. 의약계열은 생명·화학, 공학은 물리·수학, AI는 정보·수학을 축으로.",
+    uni:["<span class='hl'>전기·전자/기계/컴퓨터공학</span> → 물리학·역학과 에너지·전자기와 양자 + 미적분Ⅱ·기하 위계 완성",
+      "<span class='hl'>의예·치의·약학</span> → 생명과학·세포와 물질대사·생물의 유전 + 화학 반응의 세계, 윤리문제 탐구로 인성 보완",
+      "<span class='hl'>AI·데이터사이언스</span> → 인공지능 기초·인공지능 수학·데이터 과학·정보 + 확률과 통계",
+      "학생부 세특: 과학 진로·융합 과목에서 탐구 주제를 전공과 연결(예: 역학과 에너지→로봇 구동 분석)"]},
+  nat:{ label:"자연·이학", cls:"f-nat", desc:"수학·통계, 물리·화학·생명·지구과학",
+    rec:["미적분Ⅰ(공통선택)","기하","미적분Ⅱ","수학과제 탐구","물리학","화학","생명과학","지구과학","세포와 물질대사","행성우주과학","지구시스템과학","생물의 유전","고급 화학","융합과학 탐구","실용 통계"],
+    road:{
+      "2-1":["미적분Ⅰ","물리학","화학","생명과학"],
+      "2-2":["지구과학","세포와 물질대사","행성우주과학","고급 대수"],
+      "3-1":["미적분Ⅱ","화학 반응의 세계","생물의 유전","지구시스템과학"],
+      "3-2":["수학과제 탐구·실용 통계","융합과학 탐구","과학의 역사와 문화","심화 영어"]
+    },
+    uniLead:"지원 학과의 기초학문(전공별 1~2개 과학)을 집중 심화. 탐구 보고서·과제 연구로 학문적 호기심을 드러내는 것이 관건.",
+    uni:["<span class='hl'>수학·통계학과</span> → 미적분Ⅱ·기하·수학과제 탐구·실용 통계로 수리 역량 집중",
+      "<span class='hl'>물리·천문학과</span> → 물리학·역학과 에너지·전자기와 양자·행성우주과학",
+      "<span class='hl'>화학·생명과학과</span> → 화학·고급 화학·화학 반응의 세계 / 생명과학·세포와 물질대사·생물의 유전",
+      "<span class='hl'>지구·환경과학</span> → 지구과학·지구시스템과학·기후변화와 환경생태"]},
+  soc:{ label:"사회·상경", cls:"f-soc", desc:"경영·경제, 정치외교·행정, 법, 사회·미디어",
+    rec:["미적분Ⅰ(공통선택)","확률과 통계(공통선택)","경제 수학","경제","정치","법과 사회","국제 관계의 이해","사회와 문화","금융과 경제생활","사회문제 탐구","실용 통계","데이터 과학","현대사회와 윤리","심화 영어"],
+    road:{
+      "2-1":["미적분Ⅰ","경제 수학","경제","정치"],
+      "2-2":["법과 사회","국제 관계의 이해","현대사회와 윤리","독서 토론과 글쓰기"],
+      "3-1":["확률과 통계","사회와 문화","금융과 경제생활","심화 영어"],
+      "3-2":["사회문제 탐구","실용 통계·데이터 과학","역사로 탐구하는 현대세계","윤리문제 탐구"]
+    },
+    uniLead:"경상계열은 수학(미적분·확통)을, 사회·정외·법은 사회 진로과목과 글쓰기·토론 역량을 함께 갖추는 것이 유리.",
+    uni:["<span class='hl'>경영·경제학과</span> → 경제·경제 수학·금융과 경제생활 + 확률과 통계·실용 통계(계량 역량)",
+      "<span class='hl'>정치외교·행정</span> → 정치·국제 관계의 이해·법과 사회·사회문제 탐구",
+      "<span class='hl'>법학·미디어</span> → 법과 사회·윤리문제 탐구·사회와 문화 + 독서 토론과 글쓰기",
+      "데이터 과학·실용 통계를 더하면 사회과학 정량 연구·디지털 융합 강점 부각"]},
+  hum:{ label:"인문·어문", cls:"f-hum", desc:"국어국문·영문·어문, 사학·철학, 교육",
+    rec:["문학(공통선택)","주제 탐구 독서","독서 토론과 글쓰기","영미 문학 읽기","문학과 영상","언어생활 탐구","인문학과 윤리","윤리와 사상","세계사","동아시아 역사 기행","현대 세계의 변화","심화 영어","독일어","중국어","심화 독일어","심화 중국어"],
+    road:{
+      "2-1":["문학","주제 탐구 독서","세계사","영미 문학 읽기"],
+      "2-2":["윤리와 사상","동아시아 역사 기행","독서 토론과 글쓰기","독일어/중국어"],
+      "3-1":["언어생활 탐구","인문학과 윤리","현대 세계의 변화","심화 영어"],
+      "3-2":["문학과 영상","역사로 탐구하는 현대세계","윤리문제 탐구","심화 독일어/중국어"]
+    },
+    uniLead:"독서·글쓰기·토론으로 인문 소양을 쌓고, 전공 어문·역사·철학 과목으로 전공 적합성을 표현.",
+    uni:["<span class='hl'>국어국문·문예창작</span> → 문학·주제 탐구 독서·문학과 영상·독서 토론과 글쓰기",
+      "<span class='hl'>영문·어문학</span> → 영미 문학 읽기·심화 영어 + 제2외국어(독일어/중국어·심화)",
+      "<span class='hl'>사학·철학</span> → 세계사·동아시아 역사 기행·역사로 탐구하는 현대세계 / 윤리와 사상·인문학과 윤리",
+      "<span class='hl'>교육·사범</span> → 전공 교과 + 윤리문제 탐구·논술로 교직 적합성 강화"]}
+};
+
+/* 학기 매핑: 단위배당표상 학기 미세 배치는 학교 운영에 따라 달라질 수 있어 권장 배치로 제시 */
+
+/* ===== 과목별 수행평가 탐구주제·설계 + 실제 검증 도서·논문 (대표 10과목) ===== */
+const RESEARCH = {
+ "물리학":{ field:"공학·자연", subtitle:"역학·에너지 중심 탐구",
+  topics:["발사각·공기저항에 따른 포물선 운동 도달거리 분석(이론값 vs 실측값 오차 탐구)",
+    "사면 각도와 마찰계수에 따른 물체의 가속도 측정과 에너지 보존 검증"],
+  design:"<b>탐구 질문</b> 공기저항을 무시한 이론 사거리와 실제 사거리는 발사각에 따라 얼마나 차이 나는가?<br><b>가설</b> 발사각이 45°에 가까울수록 사거리가 최대이며, 공기저항으로 실측값은 이론값보다 작고 그 오차는 속도가 클수록 커진다.<br><b>방법</b> 스마트폰 고속촬영(또는 PhET 시뮬레이션)으로 30·45·60° 발사 영상 분석 → Tracker로 좌표 추출.<br><b>변인</b> 독립: 발사각, 초기속도 / 종속: 수평 도달거리 / 통제: 발사 높이, 질량.<br><b>분석</b> 이론식 R=v²sin2θ/g 계산값과 실측 비교, 오차율(%)을 발사각별로 그래프화 → 공기저항 항 추정.",
+  books:[{t:"김상욱의 양자 공부",a:"김상욱",p:"사이언스북스"},{t:"파인만의 여섯 가지 물리 이야기",a:"리처드 파인만",p:"승산"}],
+  papers:[{t:"PhET·Tracker를 활용한 물리 실험 탐구(역학 영역) — RISS에서 검색",a:"물리교육 분야",s:"RISS 검색",u:"https://www.riss.kr/search/Search.do?query=Tracker%20포물선%20운동%20물리"}] },
+
+ "화학":{ field:"의약·자연", subtitle:"정량분석 중심 탐구",
+  topics:["시판 음료·차류의 카페인 함량 비교 분석(추출·분광/HPLC 원리 적용)",
+    "산-염기 적정으로 식초의 아세트산 농도 정량 및 표시값과의 비교"],
+  design:"<b>탐구 질문</b> 시판 차·커피·에너지음료의 카페인 함량은 표시값과 일치하는가?<br><b>가설</b> 추출·분석법이 동일하면 카페인 함량은 음료 종류에 따라 유의하게 다르며 일부는 표시값과 차이가 있다.<br><b>방법</b> 동일 부피 시료에서 카페인 추출 후 흡광도(또는 학교 여건상 정성·반정량) 측정, 검량선 작성.<br><b>변인</b> 독립: 음료 종류 / 종속: 카페인 농도 / 통제: 시료량, 추출 조건, 온도.<br><b>분석</b> 검량선 회귀식으로 농도 환산 → 음료별 평균·표준편차 비교, 표시 함량과 오차율 해석.",
+  books:[{t:"세상은 온통 화학이야",a:"마이 티 응우옌 킴",p:"한국경제신문"},{t:"같기도 하고 아니 같기도 하고",a:"로얼드 호프만",p:"까치"}],
+  papers:[{t:"천연물로부터 카페인 추출에 관한 연구",a:"한국산학기술학회 학술대회논문집",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE07215799"},
+    {t:"HPLC를 이용한 카페인의 분석법 개발 및 시판 식품 중 함유량 조사",a:"한국식품위생안전성학회지",s:"ScienceON(KISTI)",u:"https://scienceon.kisti.re.kr/srch/selectPORSrchArticle.do?cn=JAKO199903042106057&dbt=NART"}] },
+
+ "생명과학":{ field:"의약·자연", subtitle:"미생물·유전 중심 탐구",
+  topics:["천연 항균물질(마늘·녹차 등) 농도에 따른 세균 증식 억제 효과 비교",
+    "항생제 오남용과 내성균 출현 메커니즘 문헌탐구 및 모델링"],
+  design:"<b>탐구 질문</b> 천연 추출물 농도가 높아질수록 세균 증식 억제 효과는 커지는가?<br><b>가설</b> 추출물 농도가 높을수록 억제대(투명환) 지름이 커진다(농도-효과 양의 상관).<br><b>방법</b> 디스크 확산법 — 농도 단계별 추출물 디스크를 배지에 올리고 24h 배양 후 억제대 측정.<br><b>변인</b> 독립: 추출물 농도 / 종속: 억제대 지름 / 통제: 균 종류·접종량·배양온도·시간.<br><b>분석</b> 농도-억제대 산점도와 추세선, 양성/음성 대조군 비교, MIC 추정. (학교 미생물 실험 안전수칙 준수)",
+  books:[{t:"이기적 유전자",a:"리처드 도킨스",p:"을유문화사"},{t:"판데믹: 바이러스의 위협",a:"소니아 샤",p:"나눔의집"}],
+  papers:[{t:"항생제 노출에 따른 Klebsiella pneumoniae의 내성 특성",a:"미생물학회지(2016)",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE07107181"},
+    {t:"항생제내성: 진화의 증거인가?",a:"Origin Research Journal",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE12452610"}] },
+
+ "지구과학":{ field:"자연·환경", subtitle:"대기·기후 데이터 탐구",
+  topics:["우리 지역 미세먼지(PM2.5) 농도와 기상요인(풍속·기온·강수)의 상관 분석",
+    "계절·풍향에 따른 미세먼지 농도 변화와 장거리 이동 영향 탐구"],
+  design:"<b>탐구 질문</b> 미세먼지 농도는 어떤 기상요인과 가장 강하게 연관되는가?<br><b>가설</b> 풍속이 낮고 강수가 적을수록 PM2.5 농도가 높다(음/음의 상관).<br><b>방법</b> 에어코리아·기상청 공공데이터에서 1년치 일별 PM2.5·기상자료 수집.<br><b>변인</b> 독립: 풍속·기온·강수·풍향 / 종속: PM2.5 농도 / 통제: 동일 측정소.<br><b>분석</b> 변수별 상관계수(r) 산출, 산점도·계절별 박스플롯, 다중회귀로 영향력 비교 → 고농도일의 풍향 분석.",
+  books:[{t:"미세먼지의 과학과 정치",a:"김인경 외",p:"한울아카데미"},{t:"코스모스",a:"칼 세이건",p:"사이언스북스"}],
+  papers:[{t:"기상 요인과 미세먼지 농도 간의 관계 분석 및 예측",a:"한국인공지능학회지",s:"AccessON(공개PDF)",u:"https://accesson.kr/jkaia/assets/pdf/47137/journal-2-2-9.pdf"},
+    {t:"미세먼지 예측을 위한 기계학습 모델 간 성능 비교 연구",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002650596"}] },
+
+ "인공지능 기초":{ field:"공학·AI", subtitle:"머신러닝 분류·예측 탐구",
+  topics:["공개 데이터셋(붓꽃·타이타닉 등)으로 분류 모델 성능 비교(KNN·결정트리·랜덤포레스트)",
+    "우리 학교/지역 데이터로 예측 모델을 만들고 변수 중요도 해석하기"],
+  design:"<b>탐구 질문</b> 같은 데이터에서 어떤 머신러닝 알고리즘이 가장 높은 분류 정확도를 보이는가?<br><b>가설</b> 비선형 관계가 있는 데이터에서는 랜덤포레스트가 단순 모델(KNN)보다 정확도가 높다.<br><b>방법</b> Orange 또는 Python(scikit-learn)으로 데이터 전처리→학습/검증 분할(8:2)→모델별 학습.<br><b>변인</b> 독립: 알고리즘 종류 / 종속: 정확도·F1 / 통제: 동일 데이터·분할·전처리.<br><b>분석</b> 혼동행렬·정확도 막대그래프 비교, 특성중요도 해석, 과적합 여부(학습-검증 정확도 차) 토의.",
+  books:[{t:"혼자 공부하는 머신러닝+딥러닝",a:"박해선",p:"한빛미디어"},{t:"예측 기계",a:"아제이 아그라왈 외",p:"생각의힘"}],
+  papers:[{t:"비전공자 대상 머신러닝 모델 학습 및 활용교육 커리큘럼",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART002959865"},
+    {t:"다양한 종류의 예측에서 머신러닝 성능 비교",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002444489"}] },
+
+ "경제":{ field:"사회·상경", subtitle:"노동·정책 실증 탐구",
+  topics:["최저임금 인상이 청년·고령 고용에 미친 영향 — 공공데이터 기반 실증 분석",
+    "최저임금·물가·고용 지표 추이 비교를 통한 정책 효과 토론"],
+  design:"<b>탐구 질문</b> 최저임금 인상은 연령대별 고용에 어떤 방향으로 영향을 주는가?<br><b>가설</b> 최저임금 인상 효과는 청년·고령 등 취약계층 고용에서 더 크게(음의 방향) 나타난다.<br><b>방법</b> KOSIS·고용노동부 자료로 연도별 최저임금·연령별 고용률 수집.<br><b>변인</b> 독립: 최저임금(실질) / 종속: 연령대별 고용률 / 통제: 경기변동(GDP성장률) 보정.<br><b>분석</b> 시계열 그래프·상관분석, 인상 전후 비교, 선행연구 결론(메타분석)과 대조해 한계 토의.",
+  books:[{t:"장하준의 경제학 강의",a:"장하준",p:"부키"},{t:"맨큐의 경제학",a:"그레고리 맨큐",p:"한티에듀"}],
+  papers:[{t:"최저임금의 고용효과: 메타회귀분석",a:"산업관계연구",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE07624238"},
+    {t:"최저임금 인상이 고용규모에 미치는 영향(집군추정법)",a:"한국경제의 분석",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10723385"}] },
+
+ "정치":{ field:"사회", subtitle:"청소년 정치참여 탐구",
+  topics:["만 18세 선거권 도입 후 청소년 정치효능감과 투표 의향의 관계 설문 탐구",
+    "SNS 정치정보 이용이 또래의 정치관심·참여에 미치는 영향 분석"],
+  design:"<b>탐구 질문</b> 청소년의 정치효능감이 높을수록 투표·정치참여 의향이 높은가?<br><b>가설</b> 정치정보 이용·정치교육 경험이 많을수록 정치효능감이 높고, 효능감이 높을수록 참여의향이 크다.<br><b>방법</b> 동급생 대상 리커트 척도 설문(정치관심·효능감·참여의향·SNS이용)으로 자료 수집.<br><b>변인</b> 독립: SNS 정치정보 이용·교육경험 / 종속: 참여의향 / 매개: 정치효능감.<br><b>분석</b> 문항 평균·상관분석, 집단(이용 상/하) 비교, 윤리적 설문 절차(익명·동의) 준수.",
+  books:[{t:"국가란 무엇인가",a:"유시민",p:"돌베개"},{t:"청소년을 위한 정치학 에세이",a:"설규주",p:"해냄"}],
+  papers:[{t:"청소년(만 18-19세) 유권자의 정치 정보 이용행태와 정치효능감이 투표 의도에 미치는 영향",a:"한국콘텐츠학회논문지(2021)",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10621326"},
+    {t:"SNS 활동 및 학교 내 정치교육경험이 고등학생의 시민성에 미치는 효과 연구",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002590603"}] },
+
+ "윤리문제 탐구":{ field:"인문·융합", subtitle:"AI·기술 윤리 탐구",
+  topics:["자율주행차의 '트롤리 딜레마' — 어떤 윤리 원칙을 알고리즘에 넣어야 하는가",
+    "AI 의사결정의 책임 소재와 한국형 윤리 가이드라인 비교 분석"],
+  design:"<b>탐구 질문</b> 자율주행차 사고 상황에서 우선해야 할 윤리 기준은 무엇이며 문화마다 어떻게 다른가?<br><b>접근</b> 공리주의·의무론·덕윤리 관점에서 트롤리 딜레마 사례를 분석하는 문헌·사례 연구.<br><b>방법</b> MIT Moral Machine 데이터·국내 가이드라인 비교, 동급생 대상 딜레마 선택 설문 병행.<br><b>분석틀</b> 각 윤리이론이 내리는 결론 비교표 작성 → 국가·연령별 선택 차이 해석 → 정책 제언.<br><b>유의</b> 정답을 단정하지 말고 가치 충돌을 균형 있게 서술하는 것이 핵심.",
+  books:[{t:"정의란 무엇인가",a:"마이클 샌델",p:"와이즈베리"},{t:"로봇 시대, 인간의 일",a:"구본권",p:"어크로스"}],
+  papers:[{t:"자율 주행 차량(AV)의 트롤리 딜레마 문제와 AI 윤리교육의 과제",a:"박형빈, 한국초등교육(2021)",s:"DBpia",u:"https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10657377"},
+    {t:"자율주행자동차 안전규제에서 트롤리 딜레마와 인공지능",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART003061033"}] },
+
+ "실용 통계":{ field:"사회·자연 공통", subtitle:"데이터 분석·회귀 탐구",
+  topics:["관심 주제 공공데이터로 두 변수의 상관·회귀 분석하고 예측식 세우기",
+    "표본 편향·해석 오류 사례를 통한 '통계로 거짓말하기' 비판적 탐구"],
+  design:"<b>탐구 질문</b> 내가 고른 두 변수(예: 기온-아이스크림 매출) 사이에 통계적으로 유의한 관계가 있는가?<br><b>가설</b> 두 변수는 양(또는 음)의 선형관계가 있으며 회귀식으로 예측 가능하다.<br><b>방법</b> KOSIS·공공포털에서 30개 이상 표본 수집 → 산점도 작성 → 최소제곱 회귀.<br><b>변인</b> 독립/종속 변수 명확히 구분, 이상치·결측치 처리.<br><b>분석</b> 상관계수 r·결정계수 R², 회귀식·잔차 점검, '상관≠인과' 한계와 교란변수 토의.",
+  books:[{t:"벌거벗은 통계학",a:"찰스 윌런",p:"책읽는수요일"},{t:"통계학, 빅데이터를 잡다",a:"조재근",p:"한국문학사"}],
+  papers:[{t:"데이터 기반 통계교육을 위한 수학과 교육과정 재구조화 방향 탐색",a:"KCI 등재",s:"KCI",u:"https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002761219"},
+    {t:"통계적 회귀분석에 관한 연구 — RISS에서 검색",a:"통계·수학교육 분야",s:"RISS 검색",u:"https://www.riss.kr/search/Search.do?query=회귀분석%20데이터%20분석%20교육"}] },
+
+ "영미 문학 읽기":{ field:"인문·어문", subtitle:"디스토피아 문학 분석 탐구",
+  topics:["조지 오웰 『1984』의 감시·언어통제 장치 분석과 현대 디지털 사회 비교",
+    "디스토피아 3부작(1984·멋진 신세계·우리들) 권력 통제 방식 비교 비평"],
+  design:"<b>탐구 질문</b> 『1984』가 그린 감시·언어 통제는 오늘날 디지털 감시 사회와 어떻게 연결되는가?<br><b>접근</b> 텍스트 정밀 읽기(close reading)로 '빅브라더·신어·텔레스크린' 장치 분석.<br><b>방법</b> 작품 속 통제 장치를 항목화 → 현대 사례(CCTV·SNS 알고리즘·데이터 감시)와 1:1 대응표 작성.<br><b>분석틀</b> '언어가 사고를 제한한다'는 신어(Newspeak) 개념을 언어학·미디어 이론과 연결해 영어 에세이로 작성.<br><b>산출</b> 영어 비평 에세이 + 인상 깊은 원문 인용 분석.",
+  books:[{t:"1984",a:"조지 오웰",p:"민음사"},{t:"멋진 신세계",a:"올더스 헉슬리",p:"문예출판사"}],
+  papers:[{t:"디스토피아 소설로서 조지 오웰의 『1984』",a:"국내 학위논문",s:"ScienceON(KISTI)",u:"https://scienceon.kisti.re.kr/srch/selectPORSrchArticle.do?cn=DIKO0014111861"}] }
+};
+
+function bookSearch(t,a){ return "https://search.kyobobook.co.kr/search?keyword="+encodeURIComponent(t+" "+a); }
+
+function openResearch(name){
+  const r=RESEARCH[name]; if(!r) return;
+  document.getElementById("mTitle").textContent="🔬 "+name;
+  document.getElementById("mSub").textContent=r.field+" · "+r.subtitle;
+  document.getElementById("mTopics").innerHTML=r.topics.map(t=>`<div class="topic">${t}</div>`).join("");
+  document.getElementById("mDesign").innerHTML=r.design;
+  document.getElementById("mBooks").innerHTML=r.books.map(b=>
+    `<a class="src" href="${bookSearch(b.t,b.a)}" target="_blank">${b.t} <span class="go">교보문고 ↗</span><br><span class="meta">${b.a} · ${b.p}</span></a>`).join("");
+  document.getElementById("mPapers").innerHTML=r.papers.map(p=>
+    `<a class="src" href="${p.u}" target="_blank">${p.t} <span class="go">${p.s} ↗</span><br><span class="meta">${p.a}</span></a>`).join("");
+  document.getElementById("modal").classList.add("on");
+}
+function closeModal(){ document.getElementById("modal").classList.remove("on"); }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape")closeModal(); });
+
+let track="ilban", field=null, selected=new Set();
+
+const trackInfo={ ilban:"인문·사회·자연 전 계열을 폭넓게 설계할 수 있는 표준 과정",
+  science:"수학·과학 과목이 강화된 이공계 특화 과정 (수·과 추가 이수)"};
+
+/* ---- 렌더 ---- */
+function renderFields(){
+  const el=document.getElementById("fields"); el.innerHTML="";
+  Object.entries(FIELDS).forEach(([k,f])=>{
+    const d=document.createElement("div");
+    d.className="field "+f.cls+(field===k?" on":"");
+    d.innerHTML=`<div class="bar"></div><h3>${f.label}</h3><p>${f.desc}</p>`;
+    d.onclick=()=>{field=k; applyRecommended(); render();};
+    el.appendChild(d);
+  });
+}
+
+function renderRoad(){
+  const el=document.getElementById("road"); el.innerHTML="";
+  const terms=["2-1","2-2","3-1","3-2"];
+  const labels={"2-1":"2학년 1학기","2-2":"2학년 2학기","3-1":"3학년 1학기","3-2":"3학년 2학기"};
+  terms.forEach(t=>{
+    const box=document.createElement("div"); box.className="term";
+    let inner=`<h4>${labels[t]}</h4>`;
+    if(field){ FIELDS[field].road[t].forEach(s=>inner+=`<span class="pill rec">${s}</span>`);}
+    else inner+=`<span class="note">계열을 선택하세요</span>`;
+    box.innerHTML=inner; el.appendChild(box);
+  });
+}
+
+function renderUni(){
+  const lead=document.getElementById("uniLead"), list=document.getElementById("uniList"),
+        title=document.getElementById("uniTitle");
+  if(!field){ title.textContent="진로·진학 방향"; lead.textContent="계열을 선택하면 학과별 진학 전략이 표시됩니다."; list.innerHTML=""; return;}
+  const f=FIELDS[field];
+  title.textContent=f.label+" 진학 설계";
+  lead.textContent=f.uniLead;
+  list.innerHTML=f.uni.map(x=>`<li>${x}</li>`).join("");
+}
+
+function pool(){ return track==="ilban"?ILBAN:SCIENCE; }
+
+function renderBuilder(){
+  const el=document.getElementById("builder"); el.innerHTML="";
+  const p=pool();
+  Object.entries(p).forEach(([grp,arr])=>{
+    const g=document.createElement("div"); g.className="pool-group";
+    g.innerHTML=`<div class="gh"><span>${grp}</span></div>`;
+    const pdiv=document.createElement("div"); pdiv.className="pool";
+    arr.forEach(c=>{
+      const id=c.name;
+      const isRec=field&&FIELDS[field].rec.includes(c.name);
+      const o=document.createElement("div");
+      o.className="opt"+(selected.has(id)?" sel":"")+(isRec?" rec":"");
+      const hasR=!!RESEARCH[c.name];
+      o.innerHTML=`${c.name}<span class="tag">${c.type}·${c.cr}학점</span>`+(hasR?`<span class="rbtn" title="수행평가 탐구·도서·논문 보기">🔬</span>`:``);
+      o.onclick=(e)=>{ if(e.target.classList.contains('rbtn')){openResearch(c.name);return;}
+        selected.has(id)?selected.delete(id):selected.add(id); render();};
+      pdiv.appendChild(o);
+    });
+    g.appendChild(pdiv); el.appendChild(g);
+  });
+}
+
+function renderSummary(){
+  const p=pool(); let cr=0; const sel=[];
+  Object.values(p).flat().forEach(c=>{ if(selected.has(c.name)){cr+=c.cr; sel.push(c.name);} });
+  const target = track==="ilban"?66:60; // 선택 과목 권장 학점 규모
+  document.getElementById("credits").textContent=cr;
+  document.getElementById("credBar").style.width=Math.min(100,cr/target*100)+"%";
+  document.getElementById("credTarget").textContent=
+    `권장 선택 학점 규모 약 ${target}학점 (창의적 체험활동 18학점 별도) · 현재 ${sel.length}과목`;
+
+  /* 계열 추천 충족도 */
+  const rm=document.getElementById("recMatch");
+  if(field){
+    const allNames=Object.values(p).flat().map(c=>c.name);
+    const validRecs=FIELDS[field].rec.filter(r=>allNames.includes(r));
+    const got=validRecs.filter(r=>selected.has(r));
+    rm.innerHTML=`<b style="color:var(--accent)">${FIELDS[field].label}</b> 추천 과목 충족: `+
+      `<span class="${got.length>=Math.ceil(validRecs.length*0.6)?'ok':'warnc'}">${got.length} / ${validRecs.length}</span>`;
+  } else rm.innerHTML="";
+
+  /* 교과 균형 점검 */
+  const cats={}; Object.values(p).flat().forEach(c=>{if(selected.has(c.name))cats[c.cat]=(cats[c.cat]||0)+1;});
+  const m=document.getElementById("match");
+  const order=["수학","과학","사회","국어","영어","정보","제2외국어"];
+  m.innerHTML=order.filter(k=>cats[k]).map(k=>`<div class="mrow"><span>${k}</span><span class="hl">${cats[k]}과목</span></div>`).join("")
+    || `<div class="note">아직 선택한 과목이 없습니다.</div>`;
+
+  document.getElementById("selList").innerHTML=sel.map(s=>`<span>${s}</span>`).join("");
+}
+
+function applyRecommended(){
+  /* 계열 선택 시 추천 과목 자동 체크(현재 트랙 풀에 존재하는 것만) */
+  selected.clear();
+  if(!field) return;
+  const names=Object.values(pool()).flat().map(c=>c.name);
+  FIELDS[field].rec.forEach(r=>{ if(names.includes(r)) selected.add(r); });
+}
+
+function render(){ renderFields(); renderRoad(); renderUni(); renderBuilder(); renderSummary(); }
+
+/* 이벤트 */
+document.querySelectorAll("#trackSeg button").forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll("#trackSeg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); track=b.dataset.t;
+    document.getElementById("trackDesc").textContent=trackInfo[track];
+    applyRecommended(); render(); };
+});
+document.getElementById("resetBtn").onclick=()=>{ selected.clear(); render(); };
+
+render();
+</script>
+</body>
+</html>

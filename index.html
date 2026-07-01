@@ -55,6 +55,22 @@
   .school-select{background:var(--panel2);color:var(--txt);border:1.5px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;min-width:230px}
   .school-select optgroup{color:var(--sub)}
   .notready{margin-top:14px;background:var(--chip);border:1px dashed var(--warn);border-radius:12px;padding:16px;font-size:13.5px;line-height:1.7}
+  .ach-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  .ach-form input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit}
+  .ach-form input#achSubj{min-width:170px}
+  .ach-form input[type=number]{width:74px}
+  .ach-sep{font-size:12px;color:var(--sub);margin-left:6px;font-weight:600}
+  .ach-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .ach-table th,.ach-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:middle}
+  .ach-table th{color:var(--sub);font-size:11.5px;font-weight:700}
+  .ach-bar{display:flex;height:20px;border-radius:5px;overflow:hidden;min-width:190px;background:var(--chip)}
+  .ach-bar .seg{display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;transition:width .3s}
+  .ach-bar .s0{background:#34d399}.ach-bar .s1{background:#4f8cff}.ach-bar .s2{background:#fbbf24}.ach-bar .s3{background:#fb923c}.ach-bar .s4{background:#ff6b6b}
+  .ach-legend{font-size:11px;color:var(--sub);margin:8px 0}
+  .ach-legend span{display:inline-block;margin-right:10px}
+  .ach-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:middle}
+  .mini-del{background:var(--chip);border:1px solid var(--line);color:var(--sub);border-radius:6px;cursor:pointer;padding:2px 7px}
+  .mini-del:hover{border-color:var(--bad);color:var(--bad)}
   .note{font-size:13px;color:var(--sub)}
   .uni{margin-top:8px}
   .uni li{margin:7px 0;font-size:13.5px;list-style:none;padding-left:16px;position:relative}
@@ -188,6 +204,34 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 5. 교과별 학업성취 -->
+  <div class="card work">
+    <div class="sec-title">STEP 5 · 교과별 학업성취 입력·표시 (원점수·성취도 비율)</div>
+    <div class="ach-form">
+      <input id="achSubj" list="achSubjList" placeholder="과목명 (예: 미적분Ⅰ)" autocomplete="off">
+      <datalist id="achSubjList"></datalist>
+      <input id="achN" type="number" placeholder="이수자수">
+      <input id="achAvg" type="number" step="0.1" placeholder="원점수평균">
+      <input id="achSd" type="number" step="0.1" placeholder="표준편차">
+      <span class="ach-sep">성취도(%)</span>
+      <input id="achA" type="number" placeholder="A">
+      <input id="achB" type="number" placeholder="B">
+      <input id="achC" type="number" placeholder="C">
+      <input id="achD" type="number" placeholder="D">
+      <input id="achE" type="number" placeholder="E">
+      <button class="btn" id="achSaveBtn" style="width:auto;margin-top:0">＋ 저장</button>
+    </div>
+    <div class="ach-legend">
+      <span><i style="background:#34d399"></i>A</span><span><i style="background:#4f8cff"></i>B</span><span><i style="background:#fbbf24"></i>C</span><span><i style="background:#fb923c"></i>D</span><span><i style="background:#ff6b6b"></i>E</span>
+    </div>
+    <div id="achList"></div>
+    <div class="row" style="margin-top:12px;gap:8px">
+      <button class="btn ghost" id="achExport" style="width:auto">📤 JSON 내보내기</button>
+      <label class="btn ghost" style="width:auto;cursor:pointer;text-align:center">📥 JSON 가져오기<input id="achImport" type="file" accept=".json,application/json" style="display:none"></label>
+    </div>
+    <p class="legend" style="margin-top:8px">※ 학교알리미 「교과별 학업성취 사항」 기준(이수자수·원점수 평균·표준편차·성취도 A~E 비율). 입력값은 <b>이 브라우저에 저장</b>됩니다. 모두에게 공개하려면 'JSON 내보내기'로 백업 후 공유하거나, 파일을 저에게 주시면 대시보드에 영구 반영해 드립니다.</p>
   </div>
 
   <footer>
@@ -886,7 +930,33 @@ function applyRecommended(){
   FIELDS[field].rec.forEach(r=>{ if(names.includes(r)) selected.add(r); });
 }
 
-function render(){ renderFields(); renderRoad(); renderUni(); renderBuilder(); renderSummary(); }
+function render(){ renderFields(); renderRoad(); renderUni(); renderBuilder(); renderSummary(); renderAch(); }
+
+/* ===== 교과별 학업성취 (원점수·성취도 비율) ===== */
+const ACH_SEED = {}; /* 학교알리미 데이터 영구 embed 자리 (필요 시 여기에 추가) */
+function achStore(){ try{ return JSON.parse(localStorage.getItem("ggAch")||"{}"); }catch(e){ return {}; } }
+function achSaveStore(o){ try{ localStorage.setItem("ggAch",JSON.stringify(o)); }catch(e){} }
+function achFor(school){ return Object.assign({}, ACH_SEED[school]||{}, achStore()[school]||{}); }
+function achSubjects(){
+  if(!isReady()) return [];
+  const s=new Set();
+  Object.values(schoolData().tracks).forEach(tr=>Object.values(tr).flat().forEach(c=>s.add(c.name)));
+  return [...s].sort((a,b)=>a.localeCompare(b,"ko"));
+}
+function renderAch(){
+  const dl=document.getElementById("achSubjList");
+  if(dl) dl.innerHTML=achSubjects().map(n=>`<option value="${n}">`).join("");
+  const box=document.getElementById("achList"); if(!box) return;
+  const data=achFor(currentSchool);
+  const keys=Object.keys(data).sort((a,b)=>a.localeCompare(b,"ko"));
+  if(!keys.length){ box.innerHTML=`<p class="note">아직 입력된 성취도 데이터가 없습니다. 위 칸에 과목·점수·성취도 비율을 넣고 '저장'을 누르세요.</p>`; return; }
+  box.innerHTML=`<table class="ach-table"><thead><tr><th>과목</th><th>이수자</th><th>원점수 평균(±SD)</th><th style="min-width:200px">성취도 분포 A~E</th><th></th></tr></thead><tbody>`+
+    keys.map(k=>{ const d=data[k];
+      const seg=['a','b','c','d','e'].map((x,i)=>{const v=+d[x]||0;return `<span class="seg s${i}" style="width:${v}%" title="${'ABCDE'[i]} ${v}%">${v>=9?('ABCDE'[i]):''}</span>`;}).join('');
+      return `<tr><td><b>${k}</b></td><td>${d.n||'-'}</td><td>${d.avg!==''&&d.avg!=null?d.avg:'-'}${d.sd?` <span style="color:var(--sub)">±${d.sd}</span>`:''}</td><td><div class="ach-bar">${seg}</div></td><td><button class="mini-del" data-k="${k}" title="삭제">✕</button></td></tr>`;
+    }).join('')+`</tbody></table>`;
+  box.querySelectorAll('.mini-del').forEach(b=>b.onclick=()=>{ const s=achStore(); if(s[currentSchool]){ delete s[currentSchool][b.dataset.k]; achSaveStore(s);} renderAch(); });
+}
 
 /* 이벤트 */
 document.querySelectorAll("#trackSeg button").forEach(b=>{
@@ -896,6 +966,29 @@ document.querySelectorAll("#trackSeg button").forEach(b=>{
     applyRecommended(); render(); };
 });
 document.getElementById("resetBtn").onclick=()=>{ selected.clear(); render(); };
+
+/* 학업성취 입력/내보내기/가져오기 */
+document.getElementById("achSaveBtn").onclick=()=>{
+  const g=id=>document.getElementById(id).value.trim();
+  const subj=g("achSubj"); if(!subj){ alert("과목명을 입력하세요."); return; }
+  const rec={ n:g("achN"), avg:g("achAvg"), sd:g("achSd"), a:g("achA"), b:g("achB"), c:g("achC"), d:g("achD"), e:g("achE") };
+  const s=achStore(); (s[currentSchool]=s[currentSchool]||{})[subj]=rec; achSaveStore(s);
+  ["achSubj","achN","achAvg","achSd","achA","achB","achC","achD","achE"].forEach(i=>document.getElementById(i).value="");
+  document.getElementById("achSubj").focus(); renderAch();
+};
+document.getElementById("achExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(achStore(),null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="교과별_학업성취_데이터.json"; a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById("achImport").onchange=(e)=>{
+  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const obj=JSON.parse(r.result); const cur=achStore();
+      Object.keys(obj).forEach(sc=>{ cur[sc]=Object.assign(cur[sc]||{}, obj[sc]); });
+      achSaveStore(cur); renderAch(); alert("가져오기 완료되었습니다."); }
+    catch(err){ alert("JSON 형식이 올바르지 않습니다."); } };
+  r.readAsText(f); e.target.value="";
+};
 
 /* 배경 테마 선택 (다크/그레이/라이트) */
 const themeSeg=document.getElementById("themeSeg");

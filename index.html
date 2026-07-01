@@ -71,6 +71,9 @@
   .ach-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:middle}
   .mini-del{background:var(--chip);border:1px solid var(--line);color:var(--sub);border-radius:6px;cursor:pointer;padding:2px 7px}
   .mini-del:hover{border-color:var(--bad);color:var(--bad)}
+  .ach-sem{margin-bottom:18px}
+  .ach-sem h4{font-size:14px;color:var(--accent);margin-bottom:6px}
+  .ach-table td:nth-child(2),.ach-table td:nth-child(3),.ach-table th:nth-child(2),.ach-table th:nth-child(3){text-align:center;white-space:nowrap}
   .note{font-size:13px;color:var(--sub)}
   .uni{margin-top:8px}
   .uni li{margin:7px 0;font-size:13.5px;list-style:none;padding-left:16px;position:relative}
@@ -208,30 +211,35 @@
 
   <!-- 5. 교과별 학업성취 -->
   <div class="card work">
-    <div class="sec-title">STEP 5 · 교과별 학업성취 입력·표시 (원점수·성취도 비율)</div>
-    <div class="ach-form">
-      <input id="achSubj" list="achSubjList" placeholder="과목명 (예: 미적분Ⅰ)" autocomplete="off">
-      <datalist id="achSubjList"></datalist>
-      <input id="achN" type="number" placeholder="이수자수">
-      <input id="achAvg" type="number" step="0.1" placeholder="원점수평균">
-      <input id="achSd" type="number" step="0.1" placeholder="표준편차">
-      <span class="ach-sep">성취도(%)</span>
-      <input id="achA" type="number" placeholder="A">
-      <input id="achB" type="number" placeholder="B">
-      <input id="achC" type="number" placeholder="C">
-      <input id="achD" type="number" placeholder="D">
-      <input id="achE" type="number" placeholder="E">
-      <button class="btn" id="achSaveBtn" style="width:auto;margin-top:0">＋ 저장</button>
-    </div>
+    <div class="sec-title">STEP 5 · 교과별 학업성취 (학년·학기·교과별 원점수·성취도·이수학점)</div>
+    <div id="achGradeTabs" class="seg" style="margin-bottom:12px"></div>
     <div class="ach-legend">
       <span><i style="background:#34d399"></i>A</span><span><i style="background:#4f8cff"></i>B</span><span><i style="background:#fbbf24"></i>C</span><span><i style="background:#fb923c"></i>D</span><span><i style="background:#ff6b6b"></i>E</span>
+      &nbsp;·&nbsp;원점수 평균·성취도 비율은 <b>학점 가중평균</b>, 이수학점은 <b>합계</b>
     </div>
-    <div id="achList"></div>
-    <div class="row" style="margin-top:12px;gap:8px">
-      <button class="btn ghost" id="achExport" style="width:auto">📤 JSON 내보내기</button>
-      <label class="btn ghost" style="width:auto;cursor:pointer;text-align:center">📥 JSON 가져오기<input id="achImport" type="file" accept=".json,application/json" style="display:none"></label>
-    </div>
-    <p class="legend" style="margin-top:8px">※ 학교알리미 「교과별 학업성취 사항」 기준(이수자수·원점수 평균·표준편차·성취도 A~E 비율). 입력값은 <b>이 브라우저에 저장</b>됩니다. 모두에게 공개하려면 'JSON 내보내기'로 백업 후 공유하거나, 파일을 저에게 주시면 대시보드에 영구 반영해 드립니다.</p>
+    <div id="achAgg"><p class="note">학교를 선택하면 표시됩니다.</p></div>
+
+    <details style="margin-top:18px">
+      <summary style="cursor:pointer;color:var(--sub);font-size:13px;font-weight:600">＋ 과목 직접 입력·수정 / JSON 가져오기·내보내기 (선택)</summary>
+      <div style="margin-top:12px">
+        <div class="ach-form">
+          <input id="achSubj" list="achSubjList" placeholder="과목명 (예: 미적분Ⅰ)" autocomplete="off">
+          <datalist id="achSubjList"></datalist>
+          <input id="achN" type="number" placeholder="이수자수">
+          <input id="achAvg" type="number" step="0.1" placeholder="원점수평균">
+          <input id="achSd" type="number" step="0.1" placeholder="표준편차">
+          <span class="ach-sep">성취도(%)</span>
+          <input id="achA" type="number" placeholder="A"><input id="achB" type="number" placeholder="B"><input id="achC" type="number" placeholder="C"><input id="achD" type="number" placeholder="D"><input id="achE" type="number" placeholder="E">
+          <button class="btn" id="achSaveBtn" style="width:auto;margin-top:0">＋ 저장</button>
+        </div>
+        <div id="achList"></div>
+        <div class="row" style="margin-top:12px;gap:8px">
+          <button class="btn ghost" id="achExport" style="width:auto">📤 JSON 내보내기</button>
+          <label class="btn ghost" style="width:auto;cursor:pointer;text-align:center">📥 JSON 가져오기<input id="achImport" type="file" accept=".json,application/json" style="display:none"></label>
+        </div>
+      </div>
+    </details>
+    <p class="legend" style="margin-top:8px">※ 출처: 각 학교 학교알리미 「교과별 학업성취 사항」(2025학년도). 3학년 일부는 5등급제 반영으로 D·E가 0으로 표기될 수 있습니다.</p>
   </div>
 
   <footer>
@@ -253,6 +261,7 @@
   </div>
 </div>
 
+<script src="ach.js"></script>
 <script>
 /* ===== 과목 데이터 (편제표/단위배당표 기준) =====
    type: 일반/진로/융합/공통  cat: 교과군  cr: 운영학점 */
@@ -943,7 +952,35 @@ function achSubjects(){
   Object.values(schoolData().tracks).forEach(tr=>Object.values(tr).flat().forEach(c=>s.add(c.name)));
   return [...s].sort((a,b)=>a.localeCompare(b,"ko"));
 }
+let achGrade=null;
+function achBar(a,b,c,d,e){ const v=[a,b,c,d,e].map(x=>+x||0);
+  return '<div class="ach-bar">'+v.map((x,i)=>`<span class="seg s${i}" style="width:${x}%" title="${'ABCDE'[i]} ${x.toFixed(1)}%">${x>=9?'ABCDE'[i]:''}</span>`).join('')+'</div>'; }
 function renderAch(){
+  renderAchManual();
+  const tabs=document.getElementById("achGradeTabs"), agg=document.getElementById("achAgg");
+  if(!tabs||!agg) return;
+  const src=(window.ACH_AGG&&window.ACH_AGG[currentSchool])||null;
+  if(!src){ tabs.innerHTML=""; agg.innerHTML='<p class="note">이 학교의 학업성취 데이터가 아직 없습니다. 아래 ‘직접 입력’으로 추가할 수 있습니다.</p>'; return; }
+  const grades=Object.keys(src).sort();
+  if(!achGrade||!src[achGrade]) achGrade=grades[0];
+  tabs.innerHTML=grades.map(g=>`<button class="${g===achGrade?'on':''}" data-g="${g}">${g}</button>`).join("");
+  tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{ achGrade=b.dataset.g; renderAch(); });
+  const order=["국어","국어(심)","수학","수학(심)","영어","영어(심)","국사","사회","과학","과학(심)","기술·가정","정보","제2외","제2외(심)","예체능","교양","기타",""];
+  const ord=k=>{ const i=order.indexOf(k); return i<0?99:i; };
+  const sems=["1학기","2학기"].filter(s=>src[achGrade][s]);
+  agg.innerHTML=sems.map(sem=>{
+    const areas=src[achGrade][sem];
+    const keys=Object.keys(areas).sort((a,b)=>ord(a)-ord(b));
+    let tc=0,ws=0,wa=0,wb=0,wc=0,wd=0,we=0;
+    const rows=keys.map(k=>{ const d=areas[k], cr=d[0], avg=d[1];
+      tc+=cr; ws+=avg*cr; wa+=d[2]*cr; wb+=d[3]*cr; wc+=d[4]*cr; wd+=d[5]*cr; we+=d[6]*cr;
+      return `<tr><td><b>${k||'기타'}</b></td><td>${cr}</td><td>${avg}</td><td>${achBar(d[2],d[3],d[4],d[5],d[6])}</td></tr>`; }).join("");
+    const w=tc||1;
+    const tot=`<tr style="border-top:2px solid var(--accent)"><td><b>합계 · 평균</b></td><td><b>${tc}</b></td><td><b>${(ws/w).toFixed(1)}</b></td><td>${achBar(wa/w,wb/w,wc/w,wd/w,we/w)}</td></tr>`;
+    return `<div class="ach-sem"><h4>${achGrade} ${sem}</h4><table class="ach-table"><thead><tr><th>교과</th><th>이수학점</th><th>원점수<br>평균</th><th style="min-width:190px">성취도 분포 (A~E %)</th></tr></thead><tbody>${rows}${tot}</tbody></table></div>`;
+  }).join("");
+}
+function renderAchManual(){
   const dl=document.getElementById("achSubjList");
   if(dl) dl.innerHTML=achSubjects().map(n=>`<option value="${n}">`).join("");
   const box=document.getElementById("achList"); if(!box) return;

@@ -1,0 +1,2664 @@
+{
+  "schemaVersion": "4.1",
+  "schoolId": "seoul-gangnam-eungwang",
+  "name": "은광여자고등학교",
+  "schoolType": "일반고",
+  "region": {
+    "sido": "서울특별시",
+    "sigungu": "강남구"
+  },
+  "source": "학교 교육과정 편제표(2022 개정) / 학교알리미",
+  "referenceGroup": null,
+  "programs": [],
+  "professionalSubjects": [],
+  "tracks": [
+    {
+      "trackId": "ilban",
+      "label": "일반과정",
+      "phases": [
+        {
+          "phaseId": "g2",
+          "label": "2학년 선택 (택4×2, 30학점)",
+          "grade": 2,
+          "requiredPickCount": 4,
+          "totalCredits": 30,
+          "options": [
+            {
+              "subject": "주제 탐구 독서",
+              "area": "국어",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "독서 토론과 글쓰기",
+              "area": "국어",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "수학과제 탐구",
+              "area": "수학",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "기하",
+              "area": "수학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "세계 문화와 영어",
+              "area": "영어",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "영미 문학 읽기",
+              "area": "영어",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "세계사",
+              "area": "사회",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "현대사회와 윤리",
+              "area": "사회",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "세계시민과 지리",
+              "area": "사회",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "사회와 문화",
+              "area": "사회",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "법과 사회",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "동아시아 역사 기행",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "인문학과 윤리",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "한국지리 탐구",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "국제 관계의 이해",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "경제",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "화학",
+              "area": "과학",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "물리학",
+              "area": "과학",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "생명과학",
+              "area": "과학",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "지구과학",
+              "area": "과학",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "역학과 에너지",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "세포와 물질대사",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "물질과 에너지",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "지구시스템과학",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "정보",
+              "area": "정보",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "인공지능 기초",
+              "area": "정보",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "중국어",
+              "area": "제2외국어",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "일본어",
+              "area": "제2외국어",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "심화 중국어",
+              "area": "제2외국어",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "일본어 회화",
+              "area": "제2외국어",
+              "category": "진로선택",
+              "credits": 3
+            }
+          ]
+        },
+        {
+          "phaseId": "g3",
+          "label": "3학년 선택 (택4×2)",
+          "grade": 3,
+          "requiredPickCount": 4,
+          "totalCredits": null,
+          "options": [
+            {
+              "subject": "언어생활 탐구",
+              "area": "국어",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "문학과 영상",
+              "area": "국어",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "미적분Ⅱ",
+              "area": "수학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "경제 수학",
+              "area": "수학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "인공지능 수학",
+              "area": "수학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "영어 발표와 토론",
+              "area": "영어",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "미디어 영어",
+              "area": "영어",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "역사로 탐구하는 현대 세계",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "윤리와 사상",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "여행지리",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "사회문제 탐구",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "정치",
+              "area": "사회",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "윤리문제 탐구",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "기후변화와 지속가능한 세계",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "금융과 경제생활",
+              "area": "사회",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "전자기와 양자",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "화학 반응의 세계",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "생물의 유전",
+              "area": "과학",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "기후변화와 환경생태",
+              "area": "과학",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "융합과학 탐구",
+              "area": "과학",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "데이터 과학",
+              "area": "정보",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "소프트웨어와 생활",
+              "area": "정보",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "논리와 사고",
+              "area": "교양",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "생태와 환경",
+              "area": "교양",
+              "category": "일반선택",
+              "credits": 3
+            },
+            {
+              "subject": "인간과 경제활동",
+              "area": "교양",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "교육의 이해",
+              "area": "교양",
+              "category": "진로선택",
+              "credits": 3
+            },
+            {
+              "subject": "논술",
+              "area": "교양",
+              "category": "융합선택",
+              "credits": 3
+            },
+            {
+              "subject": "인간과 철학",
+              "area": "교양",
+              "category": "진로선택",
+              "credits": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "achievement": {
+    "source": "학교알리미 공시자료",
+    "confidence": "공개데이터",
+    "byGrade": {
+      "1학년": {
+        "1학기": {
+          "국어": {
+            "credits": 4,
+            "avgScore": 86.7,
+            "dist": {
+              "A": 58.7,
+              "B": 20.2,
+              "C": 11.1,
+              "D": 5.2,
+              "E": 4.8
+            }
+          },
+          "수학": {
+            "credits": 4,
+            "avgScore": 77.1,
+            "dist": {
+              "A": 15.9,
+              "B": 33.7,
+              "C": 27.4,
+              "D": 13.5,
+              "E": 9.5
+            }
+          },
+          "영어": {
+            "credits": 4,
+            "avgScore": 77.2,
+            "dist": {
+              "A": 36.1,
+              "B": 21.4,
+              "C": 11.1,
+              "D": 9.9,
+              "E": 21.4
+            }
+          },
+          "국사": {
+            "credits": 3,
+            "avgScore": 75.9,
+            "dist": {
+              "A": 31.3,
+              "B": 22.2,
+              "C": 13.9,
+              "D": 9.9,
+              "E": 22.6
+            }
+          },
+          "사회": {
+            "credits": 4,
+            "avgScore": 86.1,
+            "dist": {
+              "A": 52,
+              "B": 24.2,
+              "C": 14.7,
+              "D": 7.1,
+              "E": 2
+            }
+          },
+          "과학": {
+            "credits": 5,
+            "avgScore": 81.4,
+            "dist": {
+              "A": 36,
+              "B": 25.7,
+              "C": 17.3,
+              "D": 10.8,
+              "E": 10.2
+            }
+          },
+          "예체능": {
+            "credits": 8,
+            "avgScore": 87.4,
+            "dist": {
+              "A": 73.8,
+              "B": 23,
+              "C": 3.2,
+              "D": 0,
+              "E": 0
+            }
+          }
+        },
+        "2학기": {
+          "국어": {
+            "credits": 4,
+            "avgScore": 83.7,
+            "dist": {
+              "A": 46.9,
+              "B": 25.9,
+              "C": 11.5,
+              "D": 7.8,
+              "E": 7.8
+            }
+          },
+          "수학": {
+            "credits": 4,
+            "avgScore": 71.1,
+            "dist": {
+              "A": 6.2,
+              "B": 20.2,
+              "C": 36.2,
+              "D": 21.4,
+              "E": 16
+            }
+          },
+          "영어": {
+            "credits": 4,
+            "avgScore": 77,
+            "dist": {
+              "A": 34.6,
+              "B": 22.2,
+              "C": 14,
+              "D": 9.9,
+              "E": 19.3
+            }
+          },
+          "국사": {
+            "credits": 3,
+            "avgScore": 71.9,
+            "dist": {
+              "A": 21.8,
+              "B": 24.3,
+              "C": 13.2,
+              "D": 11.9,
+              "E": 28.8
+            }
+          },
+          "사회": {
+            "credits": 4,
+            "avgScore": 83.7,
+            "dist": {
+              "A": 43.6,
+              "B": 26.7,
+              "C": 14.8,
+              "D": 10.3,
+              "E": 4.5
+            }
+          },
+          "과학": {
+            "credits": 5,
+            "avgScore": 87.2,
+            "dist": {
+              "A": 56.9,
+              "B": 22.6,
+              "C": 9.8,
+              "D": 5.9,
+              "E": 4.6
+            }
+          },
+          "예체능": {
+            "credits": 8,
+            "avgScore": 86.2,
+            "dist": {
+              "A": 72.4,
+              "B": 25,
+              "C": 2.6,
+              "D": 0,
+              "E": 0
+            }
+          }
+        }
+      },
+      "2학년": {
+        "1학기": {
+          "국어": {
+            "credits": 4,
+            "avgScore": 82.7,
+            "dist": {
+              "A": 45.4,
+              "B": 23.9,
+              "C": 13.4,
+              "D": 7.6,
+              "E": 9.7
+            }
+          },
+          "국어(심)": {
+            "credits": 4,
+            "avgScore": 90.4,
+            "dist": {
+              "A": 90.8,
+              "B": 4.6,
+              "C": 4.6,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "수학": {
+            "credits": 3,
+            "avgScore": 72,
+            "dist": {
+              "A": 20.2,
+              "B": 26.1,
+              "C": 16.8,
+              "D": 11.3,
+              "E": 25.6
+            }
+          },
+          "수학(심)": {
+            "credits": 4,
+            "avgScore": 94.7,
+            "dist": {
+              "A": 89.5,
+              "B": 7.9,
+              "C": 2.6,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "영어": {
+            "credits": 8,
+            "avgScore": 80.5,
+            "dist": {
+              "A": 53.2,
+              "B": 16.7,
+              "C": 11.6,
+              "D": 6.7,
+              "E": 11.8
+            }
+          },
+          "사회": {
+            "credits": 16,
+            "avgScore": 72.1,
+            "dist": {
+              "A": 31.1,
+              "B": 18.9,
+              "C": 9.1,
+              "D": 12.4,
+              "E": 28.4
+            }
+          },
+          "과학": {
+            "credits": 16,
+            "avgScore": 77.8,
+            "dist": {
+              "A": 31.6,
+              "B": 33.2,
+              "C": 15.2,
+              "D": 7.3,
+              "E": 12.8
+            }
+          },
+          "예체능": {
+            "credits": 4,
+            "avgScore": 90,
+            "dist": {
+              "A": 86.3,
+              "B": 9.9,
+              "C": 3.8,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "제2외": {
+            "credits": 2,
+            "avgScore": 73.7,
+            "dist": {
+              "A": 39.9,
+              "B": 13.4,
+              "C": 11.3,
+              "D": 8.8,
+              "E": 26.5
+            }
+          }
+        },
+        "2학기": {
+          "국어": {
+            "credits": 8,
+            "avgScore": 73.2,
+            "dist": {
+              "A": 24.8,
+              "B": 26.1,
+              "C": 14.1,
+              "D": 11,
+              "E": 24
+            }
+          },
+          "국어(심)": {
+            "credits": 8,
+            "avgScore": 78.5,
+            "dist": {
+              "A": 68.6,
+              "B": 16.4,
+              "C": 15.1,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "수학": {
+            "credits": 7,
+            "avgScore": 67.9,
+            "dist": {
+              "A": 26.9,
+              "B": 29.7,
+              "C": 18.8,
+              "D": 8.4,
+              "E": 16.2
+            }
+          },
+          "수학(심)": {
+            "credits": 4,
+            "avgScore": 89.1,
+            "dist": {
+              "A": 86.9,
+              "B": 9.3,
+              "C": 3.7,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "영어": {
+            "credits": 8,
+            "avgScore": 78.3,
+            "dist": {
+              "A": 53.9,
+              "B": 11.8,
+              "C": 10.1,
+              "D": 4.5,
+              "E": 19.7
+            }
+          },
+          "사회": {
+            "credits": 24,
+            "avgScore": 81.3,
+            "dist": {
+              "A": 61.1,
+              "B": 16.9,
+              "C": 9.2,
+              "D": 1.4,
+              "E": 11.4
+            }
+          },
+          "과학": {
+            "credits": 8,
+            "avgScore": 83,
+            "dist": {
+              "A": 64.7,
+              "B": 24,
+              "C": 11.3,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "과학(심)": {
+            "credits": 8,
+            "avgScore": 85.1,
+            "dist": {
+              "A": 72.3,
+              "B": 15.4,
+              "C": 12.2,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "예체능": {
+            "credits": 4,
+            "avgScore": 87.2,
+            "dist": {
+              "A": 81.2,
+              "B": 12.9,
+              "C": 5.9,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "제2외": {
+            "credits": 2,
+            "avgScore": 74.1,
+            "dist": {
+              "A": 43.9,
+              "B": 11,
+              "C": 10.5,
+              "D": 5.3,
+              "E": 29.4
+            }
+          }
+        }
+      },
+      "3학년": {
+        "1학기": {
+          "국어": {
+            "credits": 6,
+            "avgScore": 68.8,
+            "dist": {
+              "A": 34.9,
+              "B": 19.8,
+              "C": 16.6,
+              "D": 5.7,
+              "E": 23.1
+            }
+          },
+          "수학": {
+            "credits": 6,
+            "avgScore": 52.2,
+            "dist": {
+              "A": 4.7,
+              "B": 13.2,
+              "C": 13.2,
+              "D": 6.8,
+              "E": 62.1
+            }
+          },
+          "수학(심)": {
+            "credits": 3,
+            "avgScore": 86.3,
+            "dist": {
+              "A": 90,
+              "B": 0,
+              "C": 10,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "기타": {
+            "credits": 5,
+            "avgScore": 81,
+            "dist": {
+              "A": 78.9,
+              "B": 9.7,
+              "C": 11.4,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "영어": {
+            "credits": 5,
+            "avgScore": 70.5,
+            "dist": {
+              "A": 44.4,
+              "B": 14.8,
+              "C": 17.6,
+              "D": 3.4,
+              "E": 19.8
+            }
+          },
+          "사회": {
+            "credits": 18,
+            "avgScore": 63.2,
+            "dist": {
+              "A": 31.1,
+              "B": 12.2,
+              "C": 10.7,
+              "D": 6.9,
+              "E": 39.1
+            }
+          },
+          "과학": {
+            "credits": 9,
+            "avgScore": 75.6,
+            "dist": {
+              "A": 46,
+              "B": 28.3,
+              "C": 25.7,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "과학(심)": {
+            "credits": 9,
+            "avgScore": 85.6,
+            "dist": {
+              "A": 74.7,
+              "B": 18.3,
+              "C": 6.9,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "예체능": {
+            "credits": 3,
+            "avgScore": 81.4,
+            "dist": {
+              "A": 70,
+              "B": 12.3,
+              "C": 17.7,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "제2외": {
+            "credits": 4,
+            "avgScore": 56,
+            "dist": {
+              "A": 24.7,
+              "B": 16.1,
+              "C": 59.1,
+              "D": 0,
+              "E": 0
+            }
+          }
+        },
+        "2학기": {
+          "국어": {
+            "credits": 6,
+            "avgScore": 55.7,
+            "dist": {
+              "A": 19.7,
+              "B": 13.2,
+              "C": 30.2,
+              "D": 6.9,
+              "E": 29.9
+            }
+          },
+          "수학": {
+            "credits": 6,
+            "avgScore": 48.7,
+            "dist": {
+              "A": 3.8,
+              "B": 8.8,
+              "C": 8.5,
+              "D": 11.8,
+              "E": 67.1
+            }
+          },
+          "수학(심)": {
+            "credits": 3,
+            "avgScore": 80.3,
+            "dist": {
+              "A": 85,
+              "B": 0,
+              "C": 15,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "기타": {
+            "credits": 5,
+            "avgScore": 77.1,
+            "dist": {
+              "A": 74.1,
+              "B": 8.6,
+              "C": 17.4,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "영어": {
+            "credits": 5,
+            "avgScore": 52.2,
+            "dist": {
+              "A": 18.2,
+              "B": 14.8,
+              "C": 38.1,
+              "D": 1.8,
+              "E": 27.2
+            }
+          },
+          "사회": {
+            "credits": 18,
+            "avgScore": 62.2,
+            "dist": {
+              "A": 34.6,
+              "B": 7.7,
+              "C": 15.7,
+              "D": 3.6,
+              "E": 38.4
+            }
+          },
+          "과학": {
+            "credits": 9,
+            "avgScore": 65.4,
+            "dist": {
+              "A": 26.4,
+              "B": 43.4,
+              "C": 30.2,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "과학(심)": {
+            "credits": 9,
+            "avgScore": 76.4,
+            "dist": {
+              "A": 56,
+              "B": 26.6,
+              "C": 17.4,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "예체능": {
+            "credits": 3,
+            "avgScore": 75.4,
+            "dist": {
+              "A": 52.3,
+              "B": 23.9,
+              "C": 23.8,
+              "D": 0,
+              "E": 0
+            }
+          },
+          "제2외": {
+            "credits": 4,
+            "avgScore": 52.8,
+            "dist": {
+              "A": 12.7,
+              "B": 20.6,
+              "C": 66.8,
+              "D": 0,
+              "E": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "gradeStats": {},
+  "subjectAchievement": {
+    "source": "학교알리미 공시자료(과목별 학업성취사항)",
+    "confidence": "공개데이터",
+    "rows": [
+      {
+        "grade": "1",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "공통국어1",
+        "credits": 4,
+        "sem1": {
+          "avg": 86.7,
+          "A": 58.7,
+          "B": 20.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "공통국어2",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 83.7,
+          "A": 46.9,
+          "B": 25.9
+        }
+      },
+      {
+        "grade": "1",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "공통수학1",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.1,
+          "A": 15.9,
+          "B": 33.7
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "공통수학2",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 71.1,
+          "A": 6.2,
+          "B": 20.2
+        }
+      },
+      {
+        "grade": "1",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "공통영어1",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.2,
+          "A": 36.1,
+          "B": 21.4
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "공통영어2",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 77,
+          "A": 34.6,
+          "B": 22.2
+        }
+      },
+      {
+        "grade": "1",
+        "area": "국사",
+        "areaGroup": "국사",
+        "subject": "한국사1",
+        "credits": 3,
+        "sem1": {
+          "avg": 75.9,
+          "A": 31.3,
+          "B": 22.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "국사",
+        "areaGroup": "국사",
+        "subject": "한국사2",
+        "credits": 3,
+        "sem1": null,
+        "sem2": {
+          "avg": 71.9,
+          "A": 21.8,
+          "B": 24.3
+        }
+      },
+      {
+        "grade": "1",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "통합사회1",
+        "credits": 4,
+        "sem1": {
+          "avg": 86.1,
+          "A": 52,
+          "B": 24.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "통합사회2",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 83.7,
+          "A": 43.6,
+          "B": 26.7
+        }
+      },
+      {
+        "grade": "1",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "통합과학1",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.7,
+          "A": 20.6,
+          "B": 31.7
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "통합과학2",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 84.6,
+          "A": 46.9,
+          "B": 28
+        }
+      },
+      {
+        "grade": "1",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "과학탐구실험1",
+        "credits": 1,
+        "sem1": {
+          "avg": 96.4,
+          "A": 97.6,
+          "B": 1.6
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "과학탐구실험2",
+        "credits": 1,
+        "sem1": null,
+        "sem2": {
+          "avg": 97.7,
+          "A": 97.1,
+          "B": 1.2
+        }
+      },
+      {
+        "grade": "1",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "체육1",
+        "credits": 2,
+        "sem1": {
+          "avg": 95.3,
+          "A": 94.4,
+          "B": 4
+        },
+        "sem2": null
+      },
+      {
+        "grade": "1",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "체육2",
+        "credits": 2,
+        "sem1": null,
+        "sem2": {
+          "avg": 89.7,
+          "A": 89.3,
+          "B": 9.9
+        }
+      },
+      {
+        "grade": "1",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "음악",
+        "credits": 3,
+        "sem1": {
+          "avg": 75.7,
+          "A": 35.7,
+          "B": 58.6
+        },
+        "sem2": {
+          "avg": 76.1,
+          "A": 38.7,
+          "B": 55.7
+        }
+      },
+      {
+        "grade": "1",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "미술",
+        "credits": 3,
+        "sem1": {
+          "avg": 93.8,
+          "A": 98.2,
+          "B": 0
+        },
+        "sem2": {
+          "avg": 94,
+          "A": 94.9,
+          "B": 4.4
+        }
+      },
+      {
+        "grade": "2",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "화법과 작문",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 69.2,
+          "A": 20,
+          "B": 22.2
+        }
+      },
+      {
+        "grade": "2",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "언어와 매체",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 77.3,
+          "A": 29.5,
+          "B": 30.1
+        }
+      },
+      {
+        "grade": "2",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "문학",
+        "credits": 4,
+        "sem1": {
+          "avg": 82.7,
+          "A": 45.4,
+          "B": 23.9
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "국어(심)",
+        "areaGroup": "국어",
+        "subject": "고전 읽기",
+        "credits": 4,
+        "sem1": {
+          "avg": 90.4,
+          "A": 90.8,
+          "B": 4.6
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "국어(심)",
+        "areaGroup": "국어",
+        "subject": "고전문학 감상",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 79.5,
+          "A": 65.7,
+          "B": 20
+        }
+      },
+      {
+        "grade": "2",
+        "area": "국어(심)",
+        "areaGroup": "국어",
+        "subject": "현대문학 감상",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 77.5,
+          "A": 71.4,
+          "B": 12.7
+        }
+      },
+      {
+        "grade": "2",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "수학Ⅰ",
+        "credits": 3,
+        "sem1": {
+          "avg": 72,
+          "A": 20.2,
+          "B": 26.1
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "수학Ⅱ",
+        "credits": 3,
+        "sem1": null,
+        "sem2": {
+          "avg": 63.7,
+          "A": 3.9,
+          "B": 20.6
+        }
+      },
+      {
+        "grade": "2",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "기하",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 71.1,
+          "A": 44.1,
+          "B": 36.6
+        }
+      },
+      {
+        "grade": "2",
+        "area": "수학(심)",
+        "areaGroup": "수학",
+        "subject": "수학과제 탐구",
+        "credits": 4,
+        "sem1": {
+          "avg": 94.7,
+          "A": 89.5,
+          "B": 7.9
+        },
+        "sem2": {
+          "avg": 89.1,
+          "A": 86.9,
+          "B": 9.3
+        }
+      },
+      {
+        "grade": "2",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "영어Ⅰ",
+        "credits": 4,
+        "sem1": {
+          "avg": 73.2,
+          "A": 23.5,
+          "B": 24.8
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "영어 독해와 작문",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 68.8,
+          "A": 27.3,
+          "B": 15.2
+        }
+      },
+      {
+        "grade": "2",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "영어권 문화",
+        "credits": 4,
+        "sem1": {
+          "avg": 87.8,
+          "A": 82.9,
+          "B": 8.6
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "영미 문학 읽기",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 87.8,
+          "A": 80.6,
+          "B": 8.3
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "세계지리",
+        "credits": 4,
+        "sem1": {
+          "avg": 66.2,
+          "A": 13.6,
+          "B": 18.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "세계사",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 61.9,
+          "A": 17.2,
+          "B": 17.2
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "경제",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 76.7,
+          "A": 15,
+          "B": 40
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "정치와 법",
+        "credits": 4,
+        "sem1": {
+          "avg": 66.9,
+          "A": 22.5,
+          "B": 5
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "윤리와 사상",
+        "credits": 4,
+        "sem1": {
+          "avg": 72.4,
+          "A": 21.7,
+          "B": 19.3
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "여행지리",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 80.7,
+          "A": 65.4,
+          "B": 27.9
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "고전과 윤리",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 94.8,
+          "A": 91.7,
+          "B": 8.3
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "국제 정치",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 89.2,
+          "A": 92.6,
+          "B": 3.7
+        }
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "국제 경제",
+        "credits": 4,
+        "sem1": {
+          "avg": 82.7,
+          "A": 66.7,
+          "B": 33.3
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "한국 사회의 이해",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 84.5,
+          "A": 84.5,
+          "B": 4.2
+        }
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "물리학Ⅰ",
+        "credits": 4,
+        "sem1": {
+          "avg": 78.3,
+          "A": 18.6,
+          "B": 41.9
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "생명과학Ⅰ",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.4,
+          "A": 23.7,
+          "B": 31.3
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "지구과학Ⅰ",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.9,
+          "A": 34,
+          "B": 20.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "물리학Ⅱ",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 91.5,
+          "A": 84.2,
+          "B": 15.8
+        }
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "화학Ⅱ",
+        "credits": 4,
+        "sem1": {
+          "avg": 77.7,
+          "A": 50,
+          "B": 39.2
+        },
+        "sem2": null
+      },
+      {
+        "grade": "2",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "생명과학Ⅱ",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 74.4,
+          "A": 45.2,
+          "B": 32.3
+        }
+      },
+      {
+        "grade": "2",
+        "area": "과학(심)",
+        "areaGroup": "과학",
+        "subject": "화학 실험",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 96.2,
+          "A": 97.5,
+          "B": 2.5
+        }
+      },
+      {
+        "grade": "2",
+        "area": "과학(심)",
+        "areaGroup": "과학",
+        "subject": "지구과학 실험",
+        "credits": 4,
+        "sem1": null,
+        "sem2": {
+          "avg": 74,
+          "A": 47.2,
+          "B": 28.3
+        }
+      },
+      {
+        "grade": "2",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "스포츠 생활",
+        "credits": 2,
+        "sem1": {
+          "avg": 87.3,
+          "A": 80.7,
+          "B": 14.3
+        },
+        "sem2": {
+          "avg": 87.1,
+          "A": 78.1,
+          "B": 15.4
+        }
+      },
+      {
+        "grade": "2",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "미술",
+        "credits": 2,
+        "sem1": {
+          "avg": 92.7,
+          "A": 92,
+          "B": 5.5
+        },
+        "sem2": {
+          "avg": 87.3,
+          "A": 84.2,
+          "B": 10.5
+        }
+      },
+      {
+        "grade": "2",
+        "area": "제2외",
+        "areaGroup": "제2외",
+        "subject": "일본어Ⅰ",
+        "credits": 2,
+        "sem1": {
+          "avg": 73.7,
+          "A": 39.9,
+          "B": 13.4
+        },
+        "sem2": {
+          "avg": 74.1,
+          "A": 43.9,
+          "B": 11
+        }
+      },
+      {
+        "grade": "3",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "독서",
+        "credits": 3,
+        "sem1": {
+          "avg": 62.9,
+          "A": 18.2,
+          "B": 13.8
+        },
+        "sem2": {
+          "avg": 52.6,
+          "A": 7.7,
+          "B": 8.1
+        }
+      },
+      {
+        "grade": "3",
+        "area": "국어",
+        "areaGroup": "국어",
+        "subject": "심화 국어",
+        "credits": 3,
+        "sem1": {
+          "avg": 74.8,
+          "A": 51.6,
+          "B": 25.8
+        },
+        "sem2": {
+          "avg": 58.8,
+          "A": 31.7,
+          "B": 18.3
+        }
+      },
+      {
+        "grade": "3",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "미적분",
+        "credits": 3,
+        "sem1": {
+          "avg": 52,
+          "A": 2.4,
+          "B": 15.4
+        },
+        "sem2": {
+          "avg": 49,
+          "A": 4.1,
+          "B": 7.3
+        }
+      },
+      {
+        "grade": "3",
+        "area": "수학",
+        "areaGroup": "수학",
+        "subject": "확률과 통계",
+        "credits": 3,
+        "sem1": {
+          "avg": 52.4,
+          "A": 6.9,
+          "B": 11
+        },
+        "sem2": {
+          "avg": 48.4,
+          "A": 3.4,
+          "B": 10.3
+        }
+      },
+      {
+        "grade": "3",
+        "area": "수학(심)",
+        "areaGroup": "수학",
+        "subject": "고급 수학Ⅰ",
+        "credits": 3,
+        "sem1": {
+          "avg": 86.3,
+          "A": 90,
+          "B": 0
+        },
+        "sem2": {
+          "avg": 80.3,
+          "A": 85,
+          "B": 0
+        }
+      },
+      {
+        "grade": "3",
+        "area": "기타",
+        "areaGroup": "기타",
+        "subject": "인공지능 수학",
+        "credits": 3,
+        "sem1": {
+          "avg": 76.4,
+          "A": 76.5,
+          "B": 8.8
+        },
+        "sem2": {
+          "avg": 69.1,
+          "A": 64.7,
+          "B": 11.8
+        }
+      },
+      {
+        "grade": "3",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "영어Ⅱ",
+        "credits": 2,
+        "sem1": {
+          "avg": 60.7,
+          "A": 21.5,
+          "B": 9.7
+        },
+        "sem2": {
+          "avg": 46.2,
+          "A": 14.2,
+          "B": 7.7
+        }
+      },
+      {
+        "grade": "3",
+        "area": "영어",
+        "areaGroup": "영어",
+        "subject": "심화 영어 독해Ⅰ",
+        "credits": 3,
+        "sem1": {
+          "avg": 77,
+          "A": 59.7,
+          "B": 18.2
+        },
+        "sem2": {
+          "avg": 56.2,
+          "A": 20.8,
+          "B": 19.5
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "한국지리",
+        "credits": 3,
+        "sem1": {
+          "avg": 42.9,
+          "A": 13,
+          "B": 0
+        },
+        "sem2": {
+          "avg": 48.6,
+          "A": 17.4,
+          "B": 0
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "동아시아사",
+        "credits": 3,
+        "sem1": {
+          "avg": 54.3,
+          "A": 12.5,
+          "B": 16.7
+        },
+        "sem2": {
+          "avg": 61,
+          "A": 25,
+          "B": 4.2
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "사회·문화",
+        "credits": 3,
+        "sem1": {
+          "avg": 57.4,
+          "A": 5.7,
+          "B": 13.9
+        },
+        "sem2": {
+          "avg": 53.5,
+          "A": 11.5,
+          "B": 13.9
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "생활과 윤리",
+        "credits": 3,
+        "sem1": {
+          "avg": 58.9,
+          "A": 13.2,
+          "B": 14.2
+        },
+        "sem2": {
+          "avg": 56.3,
+          "A": 24.5,
+          "B": 11.3
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "사회문제 탐구",
+        "credits": 3,
+        "sem1": {
+          "avg": 87.7,
+          "A": 81.1,
+          "B": 8.3
+        },
+        "sem2": {
+          "avg": 82.4,
+          "A": 72.3,
+          "B": 10.2
+        }
+      },
+      {
+        "grade": "3",
+        "area": "사회",
+        "areaGroup": "사회",
+        "subject": "세계 문제와 미래 사회",
+        "credits": 3,
+        "sem1": {
+          "avg": 78,
+          "A": 61.1,
+          "B": 20
+        },
+        "sem2": {
+          "avg": 71.6,
+          "A": 56.7,
+          "B": 6.7
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "지구과학Ⅱ",
+        "credits": 3,
+        "sem1": {
+          "avg": 77.3,
+          "A": 54,
+          "B": 14
+        },
+        "sem2": {
+          "avg": 58.5,
+          "A": 32,
+          "B": 22
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "과학사",
+        "credits": 3,
+        "sem1": {
+          "avg": 80.7,
+          "A": 56.1,
+          "B": 34.1
+        },
+        "sem2": {
+          "avg": 69.2,
+          "A": 26.8,
+          "B": 48.8
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학",
+        "areaGroup": "과학",
+        "subject": "생활과 과학",
+        "credits": 3,
+        "sem1": {
+          "avg": 68.9,
+          "A": 27.8,
+          "B": 36.7
+        },
+        "sem2": {
+          "avg": 68.5,
+          "A": 20.3,
+          "B": 59.5
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학(심)",
+        "areaGroup": "과학",
+        "subject": "물리학 실험",
+        "credits": 3,
+        "sem1": {
+          "avg": 87.5,
+          "A": 82.9,
+          "B": 12.2
+        },
+        "sem2": {
+          "avg": 79.7,
+          "A": 56.1,
+          "B": 36.6
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학(심)",
+        "areaGroup": "과학",
+        "subject": "생명과학 실험",
+        "credits": 3,
+        "sem1": {
+          "avg": 87.7,
+          "A": 76.5,
+          "B": 22.2
+        },
+        "sem2": {
+          "avg": 82.2,
+          "A": 67.9,
+          "B": 28.4
+        }
+      },
+      {
+        "grade": "3",
+        "area": "과학(심)",
+        "areaGroup": "과학",
+        "subject": "과학과제 연구",
+        "credits": 3,
+        "sem1": {
+          "avg": 81.6,
+          "A": 64.7,
+          "B": 20.6
+        },
+        "sem2": {
+          "avg": 67.4,
+          "A": 44.1,
+          "B": 14.7
+        }
+      },
+      {
+        "grade": "3",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "스포츠 생활",
+        "credits": 1,
+        "sem1": {
+          "avg": 83.8,
+          "A": 84.6,
+          "B": 10.1
+        },
+        "sem2": {
+          "avg": 75.4,
+          "A": 62.8,
+          "B": 21.5
+        }
+      },
+      {
+        "grade": "3",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "음악 감상과 비평",
+        "credits": 1,
+        "sem1": {
+          "avg": 71.2,
+          "A": 39.7,
+          "B": 19
+        },
+        "sem2": {
+          "avg": 70.6,
+          "A": 32.8,
+          "B": 39.7
+        }
+      },
+      {
+        "grade": "3",
+        "area": "예체능",
+        "areaGroup": "예체능",
+        "subject": "미술 감상과 비평",
+        "credits": 1,
+        "sem1": {
+          "avg": 89.3,
+          "A": 85.7,
+          "B": 7.9
+        },
+        "sem2": {
+          "avg": 80.1,
+          "A": 61.4,
+          "B": 10.6
+        }
+      },
+      {
+        "grade": "3",
+        "area": "제2외",
+        "areaGroup": "제2외",
+        "subject": "일본어Ⅱ",
+        "credits": 2,
+        "sem1": {
+          "avg": 57,
+          "A": 25.6,
+          "B": 17.9
+        },
+        "sem2": {
+          "avg": 60.7,
+          "A": 20.5,
+          "B": 31.6
+        }
+      },
+      {
+        "grade": "3",
+        "area": "제2외",
+        "areaGroup": "제2외",
+        "subject": "중국어Ⅱ",
+        "credits": 2,
+        "sem1": {
+          "avg": 54.9,
+          "A": 23.8,
+          "B": 14.3
+        },
+        "sem2": {
+          "avg": 44.9,
+          "A": 4.8,
+          "B": 9.5
+        }
+      },
+      {
+        "grade": "3",
+        "area": "기타",
+        "areaGroup": "기타",
+        "subject": "인공지능 기초",
+        "credits": 2,
+        "sem1": {
+          "avg": 88,
+          "A": 82.6,
+          "B": 11
+        },
+        "sem2": {
+          "avg": 89,
+          "A": 88.1,
+          "B": 3.7
+        }
+      }
+    ]
+  },
+  "metrics": {
+    "byArea": {
+      "국어": {
+        "avg": 74.7,
+        "A": 44.8
+      },
+      "수학": {
+        "avg": 69.8,
+        "A": 35.3
+      },
+      "영어": {
+        "avg": 71.2,
+        "A": 40.1
+      },
+      "과학": {
+        "avg": 79.7,
+        "A": 53
+      },
+      "사회": {
+        "avg": 70.8,
+        "A": 40.9
+      }
+    },
+    "coreAvg": 73.2,
+    "coreArate": 42.8,
+    "elective23": 61,
+    "source": "학교알리미 공시자료 집계",
+    "confidence": "공개데이터"
+  },
+  "creditPlan": {
+    "source": "입학생 교육과정 학점 배당표",
+    "perSemesterCount": {},
+    "byGrade": {
+      "1": [
+        {
+          "subject": "국어",
+          "category": "공통과목",
+          "credits": "6",
+          "area": "국어"
+        },
+        {
+          "subject": "수학",
+          "category": "공통과목",
+          "credits": "8",
+          "area": "수학"
+        },
+        {
+          "subject": "영어",
+          "category": "공통과목",
+          "credits": "8",
+          "area": "영어"
+        },
+        {
+          "subject": "한국사",
+          "category": "공통과목",
+          "credits": "6",
+          "area": "한국사"
+        },
+        {
+          "subject": "통합사회",
+          "category": "공통과목",
+          "credits": "6",
+          "area": "사회"
+        },
+        {
+          "subject": "통합과학",
+          "category": "공통과목",
+          "credits": "6",
+          "area": "과학"
+        },
+        {
+          "subject": "과학탐구실험",
+          "category": "공통과목",
+          "credits": "2",
+          "area": "과학"
+        },
+        {
+          "subject": "화학Ⅰ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "과학"
+        },
+        {
+          "subject": "체육",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "체육"
+        },
+        {
+          "subject": "음악",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "예술"
+        },
+        {
+          "subject": "정보",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "교양"
+        },
+        {
+          "subject": "공통국어1",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "공통국어2",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "공통수학1",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "수학"
+        },
+        {
+          "subject": "공통수학2",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "수학"
+        },
+        {
+          "subject": "공통영어1",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "영어"
+        },
+        {
+          "subject": "공통영어2",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "영어"
+        },
+        {
+          "subject": "한국사1",
+          "category": "공통과목",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "한국사2",
+          "category": "공통과목",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "통합사회1",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "사회"
+        },
+        {
+          "subject": "통합사회2",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "사회"
+        },
+        {
+          "subject": "통합과학1",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "과학"
+        },
+        {
+          "subject": "통합과학2",
+          "category": "공통과목",
+          "credits": "4",
+          "area": "과학"
+        },
+        {
+          "subject": "과학탐구실험1",
+          "category": "공통과목",
+          "credits": "1",
+          "area": "과학"
+        },
+        {
+          "subject": "과학탐구실험2",
+          "category": "공통과목",
+          "credits": "1",
+          "area": "과학"
+        },
+        {
+          "subject": "체육1",
+          "category": "일반선택",
+          "credits": "2",
+          "area": "체육"
+        },
+        {
+          "subject": "체육2",
+          "category": "일반선택",
+          "credits": "2",
+          "area": "체육"
+        },
+        {
+          "subject": "미술",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "예술"
+        }
+      ],
+      "2": [
+        {
+          "subject": "문학",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "수학Ⅰ",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "수학"
+        },
+        {
+          "subject": "수학Ⅱ",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "수학"
+        },
+        {
+          "subject": "영어Ⅰ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "영어"
+        },
+        {
+          "subject": "스포츠 생활",
+          "category": "진로선택",
+          "credits": "6",
+          "area": "체육"
+        },
+        {
+          "subject": "미술",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "예술"
+        },
+        {
+          "subject": "고전 읽기",
+          "category": "진로선택",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "화법과 작문",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "일본어Ⅰ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "제2외국어"
+        },
+        {
+          "subject": "화법과 언어",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "국어"
+        },
+        {
+          "subject": "대수",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "수학"
+        },
+        {
+          "subject": "미적분Ⅰ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "수학"
+        },
+        {
+          "subject": "영어Ⅱ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "영어"
+        },
+        {
+          "subject": "스포츠 생활1",
+          "category": "융합선택",
+          "credits": "2",
+          "area": "체육"
+        },
+        {
+          "subject": "스포츠 생활2",
+          "category": "융합선택",
+          "credits": "2",
+          "area": "체육"
+        },
+        {
+          "subject": "세계시민과 지리",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "사회와 문화",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "일본어",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "제2외국어"
+        },
+        {
+          "subject": "한국지리 탐구",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "국제 관계의 이해",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "일본어 회화",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "제2외국어"
+        },
+        {
+          "subject": "정보",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "기술·정보"
+        },
+        {
+          "subject": "동아시아 역사 기행",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "인공지능 기초",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "기술·정보"
+        }
+      ],
+      "3": [
+        {
+          "subject": "독서",
+          "category": "일반선택",
+          "credits": "6",
+          "area": "국어"
+        },
+        {
+          "subject": "영어Ⅱ",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "영어"
+        },
+        {
+          "subject": "심화 국어",
+          "category": "진로선택",
+          "credits": "6",
+          "area": "국어"
+        },
+        {
+          "subject": "음악 감상과 비평",
+          "category": "진로선택",
+          "credits": "2",
+          "area": "예술"
+        },
+        {
+          "subject": "인공지능 기초",
+          "category": "진로선택",
+          "credits": "4",
+          "area": "기술·정보"
+        },
+        {
+          "subject": "논리학",
+          "category": "일반선택",
+          "credits": "4",
+          "area": "교양"
+        },
+        {
+          "subject": "독서와 작문",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "국어"
+        },
+        {
+          "subject": "확률과 통계",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "수학"
+        },
+        {
+          "subject": "스포츠 문화",
+          "category": "진로선택",
+          "credits": "1",
+          "area": "체육"
+        },
+        {
+          "subject": "스포츠 과학",
+          "category": "진로선택",
+          "credits": "1",
+          "area": "체육"
+        },
+        {
+          "subject": "미술 감상과 비평",
+          "category": "진로선택",
+          "credits": "2",
+          "area": "예술"
+        },
+        {
+          "subject": "언어생활 탐구",
+          "category": "융합선택",
+          "credits": "3",
+          "area": "국어"
+        },
+        {
+          "subject": "데이터 과학",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "기술·정보"
+        },
+        {
+          "subject": "생태와 환경",
+          "category": "일반선택",
+          "credits": "2",
+          "area": "교양"
+        },
+        {
+          "subject": "미디어 영어",
+          "category": "융합선택",
+          "credits": "3",
+          "area": ""
+        },
+        {
+          "subject": "소프트웨어와 생활",
+          "category": "융합선택",
+          "credits": "3",
+          "area": "기술·정보"
+        },
+        {
+          "subject": "논술",
+          "category": "융합선택",
+          "credits": "2",
+          "area": "교양"
+        },
+        {
+          "subject": "매체 의사소통",
+          "category": "융합선택",
+          "credits": "3",
+          "area": "국어"
+        },
+        {
+          "subject": "실용 통계",
+          "category": "융합선택",
+          "credits": "3",
+          "area": "수학"
+        },
+        {
+          "subject": "영어 독해와 작문",
+          "category": "일반선택",
+          "credits": "3",
+          "area": "영어"
+        },
+        {
+          "subject": "심화 영어 독해와 작문",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "영어"
+        },
+        {
+          "subject": "여행지리",
+          "category": "융합선택",
+          "credits": "3",
+          "area": "사회"
+        },
+        {
+          "subject": "문학과 영상",
+          "category": "진로선택",
+          "credits": "3",
+          "area": "국어"
+        }
+      ]
+    },
+    "pickNotes": [
+      "2학년 진로: 12 (택3)",
+      "2학년 일반: 20 (택5)",
+      "2학년 일반: 2 (택1)",
+      "3학년 진로: 18 (택6)",
+      "3학년 진로: 1 (택1)",
+      "3학년 진로: 2 (택1)",
+      "3학년 일반: 2 (택1)",
+      "2학년 일반: (택4)",
+      "2학년 일반: 3 (택1)",
+      "2학년 진로: (택4)",
+      "2학년 진로: 3 (택1)",
+      "3학년 융합: 15 (택5)",
+      "3학년 진로: 3 (택1)",
+      "3학년 융합: 21 (택7)"
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "4.0",
+  "updatedAt": "2026-08",
+  "sido": [
+    {
+      "name": "서울특별시",
+      "dir": "seoul",
+      "sigungu": [
+        {
+          "name": "강남구",
+          "dir": "gangnam",
+          "schools": [
+            {
+              "schoolId": "seoul-gangnam-gaepo",
+              "name": "개포고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-gaepo.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-gyeonggi",
+              "name": "경기고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-gyeonggi.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-gyeonggiw",
+              "name": "경기여자고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-gyeonggiw.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-dankook",
+              "name": "단국대사대부고",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-dankook.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-sookmyung",
+              "name": "숙명여자고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-sookmyung.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-apgujeong",
+              "name": "압구정고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-apgujeong.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-yeongdong",
+              "name": "영동고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-yeongdong.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-eungwang",
+              "name": "은광여자고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-eungwang.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-jungdong",
+              "name": "중동고등학교(자율형사립)",
+              "type": "자율형사립고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-jungdong.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-jungsan",
+              "name": "중산고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-jungsan.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-jinseon",
+              "name": "진선여자고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-jinseon.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-cheongdam",
+              "name": "청담고등학교",
+              "type": "일반고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-cheongdam.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-hyundai",
+              "name": "현대고등학교(자율형사립)",
+              "type": "자율형사립고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-hyundai.json",
+              "hasAchievement": true
+            },
+            {
+              "schoolId": "seoul-gangnam-hwimun",
+              "name": "휘문고등학교(자율형사립)",
+              "type": "자율형사립고",
+              "path": "schools/seoul/gangnam/seoul-gangnam-hwimun.json",
+              "hasAchievement": true
+            }
+          ]
+        },
+        {
+          "name": "광진구",
+          "dir": "gwangjin",
+          "schools": [
+            {
+              "schoolId": "seoul-gwangjin-daewon",
+              "name": "대원외국어고등학교",
+              "type": "특목고(외국어고)",
+              "path": "schools/seoul/gwangjin/seoul-gwangjin-daewon.json",
+              "hasAchievement": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

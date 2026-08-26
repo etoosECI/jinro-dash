@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "4.0",
+  "majors": [
+    {
+      "majorId": "eng",
+      "name": "공학·의약·AI",
+      "desc": "기계·전자·컴퓨터공학, 의예·약학, AI·데이터",
+      "path": "majors/eng.json"
+    },
+    {
+      "majorId": "nat",
+      "name": "자연·이학",
+      "desc": "수학·통계, 물리·화학·생명·지구과학",
+      "path": "majors/nat.json"
+    },
+    {
+      "majorId": "soc",
+      "name": "사회·상경",
+      "desc": "경영·경제, 정치외교·행정, 법, 사회·미디어",
+      "path": "majors/soc.json"
+    },
+    {
+      "majorId": "hum",
+      "name": "인문·어문",
+      "desc": "국어국문·영문·어문, 사학·철학, 교육",
+      "path": "majors/hum.json"
+    }
+  ]
+}

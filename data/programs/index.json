@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "4.1",
+  "programs": [
+    {
+      "programId": "medicine",
+      "name": "의예과",
+      "majorId": "eng",
+      "field": "의약계열",
+      "path": "programs/medicine.json",
+      "topicCount": 9
+    },
+    {
+      "programId": "semiconductor",
+      "name": "반도체공학",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/semiconductor.json",
+      "topicCount": 5
+    },
+    {
+      "programId": "business",
+      "name": "경영학",
+      "majorId": "soc",
+      "field": "상경계열",
+      "path": "programs/business.json",
+      "topicCount": 5
+    },
+    {
+      "programId": "sociology",
+      "name": "사회학",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/sociology.json",
+      "topicCount": 5
+    }
+  ]
+}

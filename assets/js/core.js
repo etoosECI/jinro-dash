@@ -30,12 +30,16 @@
   /* ---------- 오류/알림 배너 (fail-safe의 얼굴) ---------- */
   const seenBanners = new Set();
   function banner(kind, title, detail, opts) {
-    const key = kind + '|' + title + '|' + (detail || '');
-    if (!(opts && opts.repeat) && seenBanners.has(key)) return;
-    seenBanners.add(key);
+    const o = opts || {};
     const host = $('#banners');
+    /* replaceKey: 같은 종류의 안내는 하나만 남긴다.
+       (계열 → 학과를 연달아 고르면 "다시 잡았습니다" 배너가 겹겹이 쌓인다) */
+    if (o.replaceKey && host) $$('[data-bkey="' + o.replaceKey + '"]', host).forEach(n => n.remove());
+    const key = kind + '|' + title + '|' + (detail || '');
+    if (!o.repeat && !o.replaceKey && seenBanners.has(key)) return;
+    if (!o.replaceKey) seenBanners.add(key);
     if (!host) { console[kind === 'err' ? 'error' : 'warn'](title, detail || ''); return; }
-    const b = el('div', { class: 'banner ' + kind });
+    const b = el('div', { class: 'banner ' + kind, dataset: o.replaceKey ? { bkey: o.replaceKey } : {} });
     b.appendChild(el('div', { html: '<b>' + esc(title) + '</b>' + (detail ? '<br>' + esc(detail) : '') }));
     b.appendChild(el('button', { class: 'x', type: 'button', 'aria-label': '닫기', text: '✕', onclick: () => b.remove() }));
     host.appendChild(b);

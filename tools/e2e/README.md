@@ -30,3 +30,6 @@ node tools/e2e/all-programs.mjs
 node tools/e2e/program-subjects.mjs                 # 34개 전수
 node tools/e2e/program-subjects.mjs medicine,law    # 지정 학과 상세
 ```
+
+`career-switch.mjs` 는 **계열·학과를 바꿨을 때 과목 선택이 새 진로 기준으로 다시 잡히는지**를 확인합니다.
+(기계공학과로 설계 → 사회학과로 전환 → 이과 과목이 남아 있지 않아야 정상)

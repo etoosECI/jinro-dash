@@ -112,8 +112,8 @@
       S.diagnosis = p.record && p.record.diagnosis || null;
       banner('info', `'${id}' 설계를 불러왔습니다.`, p.schoolName ? `학교: ${p.schoolName}` : '');
       if (p.schoolPath) { await selectSchoolByPath(p.schoolPath, p.trackId); }
-      if (p.majorId) { await selectMajor(p.majorId); }
-      if (p.programId) { await selectProgram(p.programId); }
+      if (p.majorId) { await selectMajor(p.majorId, { restoring: true }); }
+      if (p.programId) { await selectProgram(p.programId, { restoring: true }); }
       renderGapBanners();
       if (p.record && p.record.consent) { $('#consentBox').hidden = true; $('#uploadBox').hidden = false; }
       if (S.diagnosis) renderDiagnosis();
@@ -596,7 +596,9 @@
     };
   }
 
-  async function selectMajor(id) {
+  async function selectMajor(id, opts) {
+    const restoring = !!(opts && opts.restoring);
+    const changed = !S.major || S.major.majorId !== id;
     const entry = (S.majorIndex && S.majorIndex.majors || []).find(m => m.majorId === id);
     if (!entry) { banner('info', '준비 중인 계열입니다.', '해당 계열 JSON이 data/majors/ 에 아직 없습니다.'); return; }
     const data = await loadJSON(entry.path, { schema: { majorId: '문자열', name: '문자열', recommendedSubjects: '배열' } });
@@ -611,6 +613,7 @@
     if (S.program && S.program.majorId !== id) S.program = null;
     renderPrograms(); renderRoad(); renderGuidance(); renderGapBanners(); renderBuilder();
     refreshSteps();
+    if (changed && !restoring && S.track) rebuildSelectionForCareer(data.name);
     persist('계열 선택', data.name);
     // 계열 없이 먼저 진단했다면, 계열 정보를 반영해 다시 진단할 수 있게 안내
     if (S.diagnosis && !S.diagnosis.majorApplied) {
@@ -652,9 +655,12 @@
     });
   }
 
-  async function selectProgram(id) {
+  async function selectProgram(id, opts) {
+    const restoring = !!(opts && opts.restoring);
     if (S.program && S.program.programId === id) {   // 다시 누르면 선택 해제
-      S.program = null; renderPrograms(); renderRoad(); renderBuilder(); persist('학과 선택 해제'); return;
+      S.program = null; renderPrograms(); renderRoad(); renderBuilder();
+      if (!restoring && S.track) rebuildSelectionForCareer(S.major ? S.major.name + ' 계열' : '계열');
+      persist('학과 선택 해제'); return;
     }
     const entry = ((S.programIndex && S.programIndex.programs) || []).find(p => p.programId === id);
     if (!entry) return;
@@ -662,6 +668,7 @@
     if (!data) return;
     S.program = data;
     renderPrograms(); renderRoad(); renderBuilder();
+    if (!restoring && S.track) rebuildSelectionForCareer(data.name);
     persist('학과 선택', data.name);
   }
 
@@ -846,6 +853,48 @@
       if (g.kind === 'read' && /독서|문학|작문|언어|주제 탐구/.test(subject)) out.push('독서');
     }
     return [...new Set(out)].slice(0, 2);   // 칩이 지저분해지지 않게 최대 2개만
+  }
+
+  /* 현재 진로 기준으로 권장 과목을 담는다. 반환값 = 택N 상한 때문에 못 담은 과목 수 */
+  function autoSelectRecommended() {
+    const { design } = phasesInScope();
+    let over = 0;
+    design.forEach(p => {
+      const opts = (p.options || []).filter(o => isRecommended(o.subject));
+      /* 우선순위: ① 학과 핵심 과목 ② 권장 과목 ③ 나머지 */
+      const rank = o => {
+        const l = recLevel(o.subject);
+        return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) - (inFocus(o.subject) ? 0.5 : 0);
+      };
+      opts.sort((a, b) => rank(a) - rank(b));
+      /* ★ 학기별 택N 상한을 넘겨 고르지 않는다 — 실제로 선택할 수 없는 조합을 만들지 않기 위함 */
+      const cap = p.requiredPickCount || opts.length;
+      const already = (p.options || []).filter(o => S.selected.has(o.subject)).length;
+      const room = Math.max(0, cap - already);
+      if (opts.length > room) over += opts.length - room;
+      opts.slice(0, room).forEach(o => S.selected.add(o.subject));
+    });
+    return over;
+  }
+
+  /* ★ 진로(계열·학과)가 바뀌면 과목 선택을 새 진로 기준으로 다시 잡는다.
+     이걸 하지 않으면 계열을 사회로 바꿔도 이전에 고른 물리학·화학이 그대로 남아
+     "학과를 골랐는데 설계가 안 바뀐다"가 된다. 직접 추가한 과목과 2학년 이수 이력은 유지. */
+  function rebuildSelectionForCareer(label) {
+    const before = [...S.selected].filter(x => !S.manual.includes(x));
+    S.selected = new Set(S.manual);          // 직접 추가 과목만 남긴다
+    S.topicIdx = {};
+    const out = $('#designOut'); if (out) out.innerHTML = '';
+    autoSelectRecommended();
+    renderBuilder();
+    if (before.length) {
+      const dropped = before.filter(x => !S.selected.has(x));
+      banner('info', `${label} 기준으로 과목 선택을 다시 잡았습니다.`,
+        dropped.length
+          ? `이전 진로 기준으로 골랐던 ${dropped.length}과목(${dropped.slice(0, 5).join(', ')}${dropped.length > 5 ? ' 외' : ''})은 해제했습니다. 계속 이수할 과목이면 목록에서 다시 고르면 됩니다.`
+          : '이전 선택은 새 진로에서도 권장 과목이라 그대로 유지했습니다.',
+        { replaceKey: 'career-rebuild' });
+    }
   }
 
   function renderBuilder() {
@@ -1717,23 +1766,7 @@
 
     $('#applyRec').onclick = () => {
       if (!S.major) { banner('warn', '계열을 먼저 선택해 주세요.', ''); return; }
-      const { design } = phasesInScope();
-      let over = 0;
-      design.forEach(p => {
-        const opts = (p.options || []).filter(o => isRecommended(o.subject));
-        /* 우선순위: ① 학과 핵심 과목 ② 권장 과목 ③ 나머지 */
-        const rank = o => {
-          const l = recLevel(o.subject);
-          return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) - (inFocus(o.subject) ? 0.5 : 0);
-        };
-        opts.sort((a, b) => rank(a) - rank(b));
-        /* ★ 학기별 택N 상한을 넘겨 고르지 않는다 — 실제로 선택할 수 없는 조합을 만들지 않기 위함 */
-        const cap = p.requiredPickCount || opts.length;
-        const already = (p.options || []).filter(o => S.selected.has(o.subject)).length;
-        const room = Math.max(0, cap - already);
-        if (opts.length > room) over += opts.length - room;
-        opts.slice(0, room).forEach(o => S.selected.add(o.subject));
-      });
+      const over = autoSelectRecommended();
       renderBuilder();
       persist('권장 과목 자동 선택', `${S.selected.size}과목`);
       if (over) banner('info', `학기별 선택 상한에 맞춰 ${S.selected.size}과목만 골랐습니다.`,

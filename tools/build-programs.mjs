@@ -14,6 +14,7 @@ import vm from 'node:vm';
 import { CATALOG, GROUP_DEFAULTS } from './topics/catalog.mjs';
 import { SHARED } from './topics/shared.mjs';
 import { EXTRA } from './extra-topics.mjs';
+import { SUBJECT_PLAN, normSubject } from './topics/subjects.mjs';
 
 const ROOT = path.resolve('.');
 const SRC = process.argv[2];
@@ -72,6 +73,29 @@ const GROUP_RESOURCES = {
   ],
 };
 
+/* ---------- shared.mjs 중복 키 검사 ----------
+   JS 객체 리터럴은 같은 키를 두 번 쓰면 뒤엣것이 앞엣것을 조용히 덮어쓴다.
+   주제를 보강하다가 이미 있는 영역 키를 또 만들면 기존 주제가 통째로 사라진다.
+   (실제로 한 번 겪었다) 그래서 소스를 직접 훑어 중복 키를 잡는다. */
+function lintSharedDuplicateKeys() {
+  const src = fs.readFileSync(path.join(ROOT, 'tools/topics/shared.mjs'), 'utf8').split('\n');
+  let group = null, keys = new Set(), bad = [];
+  for (const line of src) {
+    const g = line.match(/^  ([A-Za-z]+): \{/);
+    if (g) { group = g[1]; keys = new Set(); continue; }
+    const k = line.match(/^    ([^\s:]+): \[/);
+    if (k && group) {
+      if (keys.has(k[1])) bad.push(`${group}.${k[1]}`);
+      keys.add(k[1]);
+    }
+  }
+  if (bad.length) {
+    console.error('❌ shared.mjs에 중복된 영역 키가 있습니다(앞의 주제가 사라집니다):', bad.join(', '));
+    process.exit(1);
+  }
+}
+lintSharedDuplicateKeys();
+
 /* ---------- 주제 풀 병합 ---------- */
 function mergePools(...pools) {
   const out = {};
@@ -89,6 +113,35 @@ function mergePools(...pools) {
   }
   for (const k of Object.keys(out)) if (!out[k].length) delete out[k];
   return out;
+}
+
+/* ---------- 학과별 권장 과목이 실제 개설 어휘에 있는지 검사 ----------
+   과목명 오타는 조용히 '권장 0개'를 만든다. 빌드 때 잡아야 한다. */
+const VOCAB = new Map();          // 정규화명 → 실제 표기(대표)
+(function collectVocab() {
+  const regions = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/regions.json'), 'utf8'));
+  regions.sido.forEach(sd => (sd.sigungu || []).forEach(sg => (sg.schools || []).forEach(sc => {
+    const doc = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', sc.path), 'utf8'));
+    (doc.tracks || []).forEach(t => (t.phases || []).forEach(ph => (ph.options || []).forEach(o => {
+      if (!VOCAB.has(normSubject(o.subject))) VOCAB.set(normSubject(o.subject), o.subject);
+    })));
+    Object.values((doc.creditPlan && doc.creditPlan.byGrade) || {}).flat().forEach(x => {
+      if (x.subject && !VOCAB.has(normSubject(x.subject))) VOCAB.set(normSubject(x.subject), x.subject);
+    });
+  })));
+})();
+
+const unknown = [];
+for (const [pid, plan] of Object.entries(SUBJECT_PLAN)) {
+  [...(plan.core || []), ...(plan.recommended || [])].forEach(sub => {
+    if (!VOCAB.has(normSubject(sub))) unknown.push(`${pid}: "${sub}"`);
+  });
+}
+if (unknown.length) {
+  console.warn('\n⚠️  현재 수록 학교 어디에도 개설되어 있지 않은 과목명 ' + unknown.length + '건');
+  console.warn('   (오타이거나, 아직 그 과목을 개설한 학교가 없다는 뜻입니다)');
+  unknown.forEach(u => console.warn('   · ' + u));
+  console.warn('');
 }
 
 /* ---------- 생성 ---------- */
@@ -126,6 +179,10 @@ for (const p of CATALOG) {
     field: p.field,
     entryNote: p.entryNote || '',
     focusAreas: p.focusAreas || gd.focusAreas,
+    /* ★ 권장 판정의 1순위 — 정확한 과목명 목록 */
+    coreSubjects: (SUBJECT_PLAN[p.id] || {}).core || [],
+    recommendedSubjects: (SUBJECT_PLAN[p.id] || {}).recommended || [],
+    /* 목록에 없는 과목을 보조로 잡는 키워드 (교과군 안에서만 적용) */
     recommendKeywords: p.recommendKeywords || [],
     areaMap: p.areaMap || gd.areaMap,
     ownTopicCount: Object.values(ownPools).reduce((n, a) => n + a.length, 0)
@@ -155,6 +212,29 @@ for (const p of CATALOG) {
 fs.writeFileSync(path.join(ROOT, 'data/programs/index.json'),
   JSON.stringify({ schemaVersion: '4.2', programs: index }, null, 2));
 
+/* ===========================================================
+   계열(majors)에도 focusAreas · areaMap · topicPools를 넣는다
+   ★ 학과 선택은 '선택 사항'이라 많은 학생이 계열만 고르고 넘어간다.
+     계열에 이 값들이 없으면 교과군 필터가 전혀 걸리지 않아
+     인문·사회 계열 학생 화면에 이과 과목이 그대로 깔린다.
+   =========================================================== */
+const MAJOR_SETUP = {
+  eng: { groups: ['engineering', 'medical'], focusAreas: ['수학', '과학', '정보', '기술'] },
+  nat: { groups: ['natural'], focusAreas: ['수학', '과학', '정보'] },
+  soc: { groups: ['social'], focusAreas: ['사회', '국어', '수학', '정보', '영어'] },
+  hum: { groups: ['humanities'], focusAreas: ['국어', '사회', '영어', '제2외국어', '수학', '예술'] },
+};
+
+function mergeAreaMaps(groups) {
+  const out = {};
+  groups.forEach(g => {
+    for (const [area, keys] of Object.entries(GROUP_DEFAULTS[g].areaMap)) {
+      out[area] = [...new Set([...(out[area] || []), ...keys])];
+    }
+  });
+  return out;
+}
+
 /* ---------- 계열(majors)의 departments를 학과 이름과 일치시킨다 ----------
    이름이 다르면 화면에서 같은 학과가 "준비 중" 카드로 한 번 더 그려진다
    (예: programs의 '경영학' vs majors의 '경영학과'). */
@@ -166,6 +246,19 @@ if (fs.existsSync(midxPath)) {
     if (!fs.existsSync(file)) return;
     const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
     doc.departments = index.filter(p => p.majorId === m.majorId).map(p => p.name);
+
+    const setup = MAJOR_SETUP[m.majorId];
+    if (setup) {
+      doc.focusAreas = setup.focusAreas;
+      doc.areaMap = mergeAreaMaps(setup.groups);
+      doc.topicPools = mergePools(...setup.groups.map(g => SHARED[g] || {}));
+      doc.resources = setup.groups.flatMap(g => (GROUP_RESOURCES[g] || []))
+        .filter((r, i, a) => a.findIndex(x => x.title === r.title) === i)
+        .map(r => ({ ...r, verified: true }));
+      doc.schemaVersion = '4.3';
+      const n = Object.values(doc.topicPools).reduce((s, a) => s + a.length, 0);
+      console.log(`  [계열] ${doc.name} — 교과군 ${doc.focusAreas.join('·')} · 공통 탐구 주제 ${n}개`);
+    }
     fs.writeFileSync(file, JSON.stringify(doc, null, 2));
   });
   console.log('계열별 departments를 학과 이름과 동기화했습니다.');

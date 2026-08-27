@@ -83,6 +83,9 @@ h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
 .opt:hover{border-color:var(--accent)}
 .opt.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 .opt.rec::after{content:"★";color:var(--warn);margin-left:5px;font-size:11px}
+.opt.core{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn) inset}
+.opt.core::after{content:"★핵심";color:var(--warn);font-weight:800;font-size:9.5px;margin-left:5px}
+.opt.sel.core::after{color:#fff2c2}
 .opt.sel.rec::after{color:#fff2c2}
 .tag{font-size:10px;opacity:.6;margin-left:4px}
 .summary{position:sticky;top:16px}

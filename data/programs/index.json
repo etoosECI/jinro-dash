@@ -97,7 +97,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/mathematics.json",
-      "topicCount": 11,
+      "topicCount": 16,
       "ownTopicCount": 2
     },
     {
@@ -106,7 +106,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/statistics.json",
-      "topicCount": 11,
+      "topicCount": 16,
       "ownTopicCount": 2
     },
     {
@@ -115,7 +115,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/physics.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -124,7 +124,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/astronomy.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -133,7 +133,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/chemistry.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -142,7 +142,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/biology.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -151,7 +151,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/earthsci.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -160,7 +160,7 @@
       "majorId": "nat",
       "field": "이학계열",
       "path": "programs/oceanography.json",
-      "topicCount": 10,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -169,7 +169,7 @@
       "majorId": "soc",
       "field": "상경계열",
       "path": "programs/business.json",
-      "topicCount": 21,
+      "topicCount": 25,
       "ownTopicCount": 13
     },
     {
@@ -178,7 +178,7 @@
       "majorId": "soc",
       "field": "상경계열",
       "path": "programs/economics.json",
-      "topicCount": 10,
+      "topicCount": 14,
       "ownTopicCount": 2
     },
     {
@@ -187,7 +187,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/politics.json",
-      "topicCount": 10,
+      "topicCount": 14,
       "ownTopicCount": 2
     },
     {
@@ -196,7 +196,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/publicadmin.json",
-      "topicCount": 9,
+      "topicCount": 13,
       "ownTopicCount": 1
     },
     {
@@ -205,7 +205,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/law.json",
-      "topicCount": 10,
+      "topicCount": 14,
       "ownTopicCount": 2
     },
     {
@@ -214,7 +214,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/sociology.json",
-      "topicCount": 22,
+      "topicCount": 26,
       "ownTopicCount": 14
     },
     {
@@ -223,7 +223,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/media.json",
-      "topicCount": 10,
+      "topicCount": 14,
       "ownTopicCount": 2
     },
     {
@@ -232,7 +232,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/psychology.json",
-      "topicCount": 10,
+      "topicCount": 14,
       "ownTopicCount": 2
     },
     {
@@ -241,7 +241,7 @@
       "majorId": "hum",
       "field": "인문계열",
       "path": "programs/korean.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -250,7 +250,7 @@
       "majorId": "hum",
       "field": "어문계열",
       "path": "programs/english.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -259,7 +259,7 @@
       "majorId": "hum",
       "field": "어문계열",
       "path": "programs/german.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -268,7 +268,7 @@
       "majorId": "hum",
       "field": "어문계열",
       "path": "programs/chinese.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -277,7 +277,7 @@
       "majorId": "hum",
       "field": "인문계열",
       "path": "programs/history.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -286,7 +286,7 @@
       "majorId": "hum",
       "field": "인문계열",
       "path": "programs/philosophy.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -295,7 +295,7 @@
       "majorId": "hum",
       "field": "인문계열",
       "path": "programs/arthistory.json",
-      "topicCount": 11,
+      "topicCount": 15,
       "ownTopicCount": 1
     },
     {
@@ -304,7 +304,7 @@
       "majorId": "hum",
       "field": "사범계열",
       "path": "programs/education.json",
-      "topicCount": 12,
+      "topicCount": 16,
       "ownTopicCount": 2
     }
   ]

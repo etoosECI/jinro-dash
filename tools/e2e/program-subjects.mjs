@@ -1,0 +1,38 @@
+import { chromium } from '/tmp/node_modules/playwright/index.mjs';
+import fs from 'node:fs';
+const idx = JSON.parse(fs.readFileSync('/home/claude/jinro-dash/data/programs/index.json','utf8'));
+const only = process.argv[2] ? process.argv[2].split(',') : null;
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport:{width:1300,height:1000} });
+const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:8899/', { waitUntil:'networkidle' });
+await p.waitForTimeout(500);
+await p.click('#entrySeg button[data-entry="2"]');
+await p.fill('#idInput','심층-점검');
+await p.click('#toSchool'); await p.waitForTimeout(300);
+await p.fill('#schoolSearch','경기고'); await p.waitForTimeout(400);
+await p.click('#acList button'); await p.waitForTimeout(700);
+const list = only ? idx.programs.filter(x=>only.includes(x.programId)) : idx.programs;
+for (const prog of list) {
+  const doc = JSON.parse(fs.readFileSync('/home/claude/jinro-dash/data/'+prog.path,'utf8'));
+  await p.click('#steps button[data-step="major"]'); await p.waitForTimeout(200);
+  await p.click(`#fields .field[data-id="${prog.majorId}"]`); await p.waitForTimeout(350);
+  await p.locator('#progGrid .progcard:not(.soon)', { hasText: prog.name }).first().click();
+  await p.waitForTimeout(350);
+  await p.click('#toDesign'); await p.waitForTimeout(300);
+  await p.click('#resetBtn'); await p.waitForTimeout(200);
+  await p.click('#applyRec'); await p.waitForTimeout(400);
+  const sel = await p.locator('#selList span').allTextContents();
+  await p.click('#genDesign'); await p.waitForTimeout(450);
+  const cards = (await p.locator('#designOut .inq h4').allTextContents()).filter(t=>t.includes('🔬'));
+  const core = doc.coreSubjects||[], rec = doc.recommendedSubjects||[];
+  const n = x=>String(x).replace(/\s/g,'').replace(/Ⅱ/g,'II');
+  const selN = sel.map(n);
+  const extra = sel.filter(s => !core.some(c=>n(c)===n(s)) && !rec.some(c=>n(c)===n(s)));
+  console.log(`\n■ ${prog.name}  선택 ${sel.length} / 카드 ${cards.length}`);
+  console.log('  핵심 확보:', core.filter(c=>selN.includes(n(c))).join(', ') || '없음');
+  console.log('  목록 밖 선택:', extra.join(', ') || '없음');
+  if (only) cards.forEach(c=>console.log('   ·', c.replace('🔬','').trim()));
+}
+console.log('\n콘솔 오류:', errs.length?errs:'없음');
+await b.close();

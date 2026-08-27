@@ -1,0 +1,33 @@
+import { chromium } from '/tmp/node_modules/playwright/index.mjs';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport:{width:1300,height:1200} });
+const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:8899/', { waitUntil:'networkidle' });
+await p.waitForTimeout(400);
+await p.click('#entrySeg button[data-entry="2"]');
+await p.fill('#idInput','계열4-점검');
+await p.click('#toSchool'); await p.waitForTimeout(300);
+await p.fill('#schoolSearch','경기고'); await p.waitForTimeout(400);
+await p.click('#acList button'); await p.waitForTimeout(700);
+const SCI = /물리|화학|생명과학|지구과학|역학|전자기|양자|세포|물질대사|행성|생물의 유전|고급 물리|고급 화학|지구시스템|융합과학/;
+const HUMSOC = /문학|독서|언어|매체|화법|작문|역사|윤리|사상|지리|정치|법과|사회|경제|세계사|여행|국제 관계|도시의 미래|외국어|중국|독일/;
+for (const m of ['eng','nat','soc','hum']) {
+  await p.click('#steps button[data-step="major"]'); await p.waitForTimeout(250);
+  await p.click(`#fields .field[data-id="${m}"]`); await p.waitForTimeout(400);
+  await p.click('#toDesign'); await p.waitForTimeout(350);
+  await p.click('#resetBtn'); await p.waitForTimeout(200);
+  const near = await p.locator('#builder .pool-group > .pool .opt').allTextContents();
+  const isSci = ['eng','nat'].includes(m);
+  const bad = near.filter(c => isSci ? (HUMSOC.test(c) && !SCI.test(c)) : SCI.test(c));
+  await p.click('#applyRec'); await p.waitForTimeout(400);
+  const sel = await p.locator('#selList span').allTextContents();
+  const badSel = sel.filter(c => isSci ? (HUMSOC.test(c) && !SCI.test(c)) : SCI.test(c));
+  await p.click('#genDesign'); await p.waitForTimeout(500);
+  const cards = (await p.locator('#designOut .inq h4').allTextContents()).filter(t=>t.includes('🔬'));
+  console.log(`\n■ ${m} (학과 미선택) 펼친목록 ${near.length} / 선택 ${sel.length} / 카드 ${cards.length}`);
+  console.log('   목록 위반:', bad.length ? bad.map(x=>x.split(/[진일융공]/)[0].trim()).join(', ') : '없음');
+  console.log('   선택 위반:', badSel.length ? badSel.join(', ') : '없음');
+  cards.slice(0,3).forEach(c=>console.log('   ·', c.replace('🔬','').trim()));
+}
+console.log('\n콘솔 오류:', errs.length ? errs : '없음');
+await b.close();

@@ -654,28 +654,65 @@
 
   async function selectProgram(id) {
     if (S.program && S.program.programId === id) {   // 다시 누르면 선택 해제
-      S.program = null; renderPrograms(); renderBuilder(); persist('학과 선택 해제'); return;
+      S.program = null; renderPrograms(); renderRoad(); renderBuilder(); persist('학과 선택 해제'); return;
     }
     const entry = ((S.programIndex && S.programIndex.programs) || []).find(p => p.programId === id);
     if (!entry) return;
     const data = await loadJSON(entry.path, { schema: { programId: '문자열', name: '문자열', topicPools: '객체' } });
     if (!data) return;
     S.program = data;
-    renderPrograms(); renderBuilder();
+    renderPrograms(); renderRoad(); renderBuilder();
     persist('학과 선택', data.name);
   }
 
+  /* 학기별 권장 이수 로드맵
+     학과를 골랐으면 **내 학교 편제에 실제로 개설된** 핵심·권장 과목을 학년별로 배치한다.
+     (학과별 로드맵을 따로 적어 두면 학교마다 개설이 달라 금세 어긋난다) */
   function renderRoad() {
     const host = $('#road'); host.innerHTML = '';
+    const rn = $('#roadNote');
+    if (rn) rn.innerHTML = S.program
+      ? '위 배치는 <b>내 학교 편제표에 실제 개설된 학년</b> 기준입니다. 학기(1·2학기) 세부 배치는 학교 운영에 따라 달라질 수 있습니다.'
+      : '학기 배치는 학교 운영에 따라 달라질 수 있는 <b>권장안</b>입니다. 실제 개설은 STEP 2의 편제표를 따릅니다.';
+
+    if (S.program && S.track) {
+      const core = new Set((S.program.coreSubjects || []).map(normSub));
+      const rec = new Set((S.program.recommendedSubjects || []).map(normSub));
+      const phases = (S.track.phases || []).filter(p => (p.options || []).length);
+      if (!phases.length) { host.appendChild(el('p', { class: 'note', text: '이 학교의 편제 데이터가 없습니다.' })); return; }
+      let any = false;
+      phases.forEach(p => {
+        const t = el('div', { class: 'term' });
+        t.appendChild(el('h4', { text: (p.grade ? p.grade + '학년' : p.label) + (p.requiredPickCount ? ` · 택${p.requiredPickCount}` : '') }));
+        const cs = (p.options || []).filter(o => core.has(normSub(o.subject)));
+        const rs = (p.options || []).filter(o => rec.has(normSub(o.subject)));
+        cs.forEach(o => { any = true; t.appendChild(el('span', { class: 'pill rec', style: 'border-color:var(--warn);color:var(--warn);font-weight:700', text: '★ ' + o.subject })); });
+        rs.forEach(o => { any = true; t.appendChild(el('span', { class: 'pill rec', text: o.subject })); });
+        if (!cs.length && !rs.length) t.appendChild(el('span', { class: 'note', text: '이 구간에 개설된 권장 과목 없음' }));
+        host.appendChild(t);
+      });
+      const missing = (S.program.coreSubjects || []).filter(x => !offeredSet().has(normSub(x)));
+      const note = el('p', { class: 'note', style: 'grid-column:1/-1;margin-top:4px' });
+      note.innerHTML = `<b>★ 표시가 ${esc(S.program.name)} 핵심 과목</b>입니다. ` +
+        (any ? '' : '내 학교 편제에 이 학과의 권장 과목이 개설되어 있지 않습니다. ') +
+        (missing.length
+          ? `핵심 과목 중 <b>${esc(missing.join(', '))}</b> 은(는) 내 학교에 미개설입니다 — 공동교육과정·온라인학교로 이수하거나 개인 심화탐구로 보완하세요.`
+          : '핵심 과목이 모두 내 학교에 개설되어 있습니다.');
+      host.appendChild(note);
+      return;
+    }
+
     const road = (S.major && S.major.roadmap) || {};
     const keys = Object.keys(road);
-    if (!keys.length) { host.appendChild(el('p', { class: 'note', text: '로드맵 데이터가 없습니다.' })); return; }
+    if (!keys.length) { host.appendChild(el('p', { class: 'note', text: '계열을 선택하면 학기별 로드맵이 표시됩니다.' })); return; }
     keys.forEach(k => {
       const t = el('div', { class: 'term' });
       t.appendChild(el('h4', { text: k.replace('-', '학년 ') + '학기' }));
       (road[k] || []).forEach(s => t.appendChild(el('span', { class: 'pill rec', text: s })));
       host.appendChild(t);
     });
+    host.appendChild(el('p', { class: 'note', style: 'grid-column:1/-1;margin-top:4px',
+      text: '세부 학과를 고르면 내 학교 편제에 실제 개설된 과목으로 로드맵이 다시 그려집니다.' }));
   }
   function renderGuidance() {
     const g = (S.major && S.major.guidance) || {};
@@ -709,12 +746,30 @@
     });
     return [...new Set(out)];
   }
-  /* 선택 대상 목록에서 아직 확보되지 않은 권장 과목 */
-  function missingRec() {
-    const toks = recTokens(S.major, { selectableOnly: true });
-    const all = new Set([...S.selected, ...S.taken]);
-    return toks.filter(t => ![...all].some(s => s === t || s.includes(t) || t.includes(s)));
+  /* 이 진로가 권장하는 과목 목록 (학과가 있으면 학과 기준) */
+  function wantedSubjects() {
+    if (S.program) return [...(S.program.coreSubjects || []), ...(S.program.recommendedSubjects || [])];
+    return recTokens(S.major, { selectableOnly: true });
   }
+  /* 아직 확보되지 않은 권장 과목 */
+  function missingRec() {
+    const have = new Set([...S.selected, ...S.taken].map(normSub));
+    return wantedSubjects().filter(t => !have.has(normSub(t)));
+  }
+  /* 학교에 개설되어 있는 권장 과목만 (미개설은 학생 책임이 아니다) */
+  function offeredSet() {
+    const set = new Set();
+    ((S.track && S.track.phases) || []).forEach(p => (p.options || []).forEach(o => set.add(normSub(o.subject))));
+    return set;
+  }
+  /* ---------- 설계 컨텍스트 ----------
+     학과를 골랐으면 학과, 아니면 계열이 기준이 된다.
+     ★ 학과 선택은 '선택 사항'이므로 계열만 골라도 교과군 필터와 주제 배정이 작동해야 한다.
+       (계열 JSON에도 focusAreas·areaMap·topicPools가 들어 있다) */
+  function ctx() { return S.program || S.major || null; }
+  function ctxName() { const c = ctx(); return c ? c.name : ''; }
+  function ctxIsProgram() { return !!S.program; }
+
   /* ---------- 과목 → 교과군 조회 (편제 데이터가 진실의 원천) ---------- */
   const areaCache = new Map();
   function subjectArea(subject) {
@@ -732,20 +787,37 @@
      ★ 이 게이트가 없으면 '세계'·'문화' 같은 짧은 키워드가
        "화학 반응의 세계"·"과학의 역사와 문화" 같은 이과 과목에 걸린다. */
   function inFocus(subject) {
-    const focus = (S.program && S.program.focusAreas) || null;
-    if (!focus || !focus.length) return true;      // 학과 미선택이면 게이트 없음
+    const c = ctx();
+    const focus = (c && c.focusAreas) || null;
+    if (!focus || !focus.length) return true;      // 계열·학과 모두 미선택이면 게이트 없음
     const a = subjectArea(subject);
     if (!a) return true;                           // 교과군을 모르면 막지 않는다(직접 추가 과목 등)
     return focus.includes(a);
   }
 
-  function isRecommended(subject, major) {
-    // ① 계열 권장 목록에 이름으로 들어 있으면 무조건 권장 (교과군과 무관하게 존중)
-    if (recTokens(major).some(t => subject === t || subject.includes(t) || t.includes(subject))) return true;
-    // ② 학과 키워드 매칭은 그 학과가 보는 교과군 안에서만 적용한다
-    if (S.program && inFocus(subject) && (S.program.recommendKeywords || []).some(k => subject.includes(k))) return true;
-    return false;
+  /* 과목명 표기 흔들림 흡수 (역사로 탐구하는 현대 세계 ↔ 현대세계, Ⅱ ↔ II) */
+  const normSub = x => String(x || '').replace(/\s/g, '')
+    .replace(/[ⅠⅡⅢ]/g, m => ({ 'Ⅰ': 'I', 'Ⅱ': 'II', 'Ⅲ': 'III' }[m]))
+    .replace(/[·ㆍ]/g, '');
+
+  /* 권장 등급 — 'core' 핵심 | 'rec' 권장 | null 해당 없음
+     ★ 학과를 골랐으면 학과의 과목 목록만 본다.
+       계열 목록을 그대로 통과시키면 기계공학과에 생명과학이, 의예과에 전자기와 양자가 권장된다. */
+  function recLevel(subject) {
+    const n = normSub(subject);
+    if (S.program) {
+      if ((S.program.coreSubjects || []).some(x => normSub(x) === n)) return 'core';
+      if ((S.program.recommendedSubjects || []).some(x => normSub(x) === n)) return 'rec';
+      /* 여기서 키워드 부분 문자열로 한 번 더 건지지 않는다.
+         '국어'가 "중국어"에, '수학'이 "경제 수학"에 걸려 학과와 무관한 과목이 권장된다.
+         목록에 없는 좋은 과목은 학생이 직접 고르면 되고, 재설계 안내가 따라붙는다. */
+      return null;
+    }
+    // 학과 미선택이면 계열 권장 목록을 쓴다
+    if (!S.major) return null;
+    return recTokens(S.major).some(t => subject === t || subject.includes(t) || t.includes(subject)) ? 'rec' : null;
   }
+  function isRecommended(subject) { return !!recLevel(subject); }
 
   /* ---------- 진단 보완점(GAP) → 설계 반영 (프로토타입에서 가져온 장점) ---------- */
   function activeGaps() { return (S.diagnosis && S.diagnosis.gaps) || []; }
@@ -827,13 +899,14 @@
       g.appendChild(el('div', { class: 'gh', html: `<span>${esc(p.label)}</span><span class="rule">${esc(rule)}</span>` }));
 
       const opts = p.options || [];
-      const near = S.program ? opts.filter(o => inFocus(o.subject)) : opts;
-      const far = S.program ? opts.filter(o => !inFocus(o.subject)) : [];
+      const hasFocus = !!(ctx() && (ctx().focusAreas || []).length);
+      const near = hasFocus ? opts.filter(o => inFocus(o.subject)) : opts;
+      const far = hasFocus ? opts.filter(o => !inFocus(o.subject)) : [];
       const chip = o => {
-        const rec = S.major && isRecommended(o.subject, S.major);
+        const lvl = recLevel(o.subject); const rec = !!lvl;
         const gt = gapTagsFor(o.subject);
         const b = el('span', {
-          class: 'opt' + (S.selected.has(o.subject) ? ' sel' : '') + (rec ? ' rec' : '') + (gt.length ? ' gapfill' : ''),
+          class: 'opt' + (S.selected.has(o.subject) ? ' sel' : '') + (rec ? ' rec' : '') + (lvl === 'core' ? ' core' : '') + (gt.length ? ' gapfill' : ''),
           title: `${o.area} · ${o.category} · ${o.credits || 3}학점` + (gt.length ? ` · 보완: ${gt.join('·')}` : ''),
         });
         b.appendChild(document.createTextNode(o.subject));
@@ -866,7 +939,7 @@
           if (pickedFar || S.showFar) det.open = true;
           det.appendChild(el('summary', { class: 'note', style: 'cursor:pointer',
             html: `그 외 개설 과목 ${far.length}개 보기 <span class="note" style="font-size:11px">— ` +
-              `${esc((S.program && (S.program.focusAreas || []).join('·')) || '')} 밖 교과군` +
+              `${esc(((ctx() && ctx().focusAreas) || []).join('·'))} 밖 교과군` +
               (pickedFar ? ` · <b style="color:var(--accent)">${pickedFar}개 선택 중</b>` : '') + `</span>` }));
           const pl2 = el('div', { class: 'pool', style: 'margin-top:8px' });
           far.forEach(o => pl2.appendChild(chip(o)));
@@ -905,11 +978,26 @@
     }
 
     $('#designCtx').textContent = '· ' + [
-      S.program ? S.program.name : (S.major ? S.major.name : ''),
+      ctxName() + (ctxIsProgram() ? '' : ' (계열 단위 설계)'),
       S.school ? S.school.name : '',
       ((S.profile && S.profile.entryGrade) || 2) + '학년 진입',
       (S.taken.size ? '2학년 이수 ' + S.taken.size + '과목 고정' : ''),
     ].filter(Boolean).join(' · ');
+
+    /* 학과 미선택 안내 — 계열 단위로도 설계는 되지만 학과를 고르면 더 정밀해진다 */
+    if (!ctxIsProgram() && S.major) {
+      const n = ((S.programIndex && S.programIndex.programs) || []).filter(p => p.majorId === S.major.majorId).length;
+      if (n) {
+        const b = el('div', { class: 'banner info', style: 'margin-top:14px' });
+        b.appendChild(el('div', { html:
+          `지금은 <b>${esc(S.major.name)} 계열 단위</b>로 설계 중입니다. ` +
+          `④ 단계에서 세부 학과(${n}개)를 고르면 <b>학과 전용 탐구 주제</b>가 더해져 과목별 배정이 정밀해집니다.` }));
+        const go2 = el('button', { class: 'btn ghost sm', type: 'button', text: '학과 고르러 가기', style: 'margin-left:auto' });
+        go2.onclick = () => go('major');
+        b.appendChild(go2);
+        builder.appendChild(b);
+      }
+    }
 
     renderGapBanners();
     renderSummary();
@@ -939,13 +1027,18 @@
       m.appendChild(el('div', { class: 'mrow', html: `<span>${esc(k)}</span><b>${v}과목</b>` })));
     if (!Object.keys(byArea).length) m.appendChild(el('p', { class: 'note', text: '아직 선택한 과목이 없습니다.' }));
 
-    /* 권장 일치도 */
-    const toks = recTokens(S.major);
-    const all = new Set([...S.selected, ...S.taken]);
-    const hit = toks.filter(t => [...all].some(s => s === t || s.includes(t) || t.includes(s)));
-    const uniqHit = [...new Set(hit)];
-    $('#recMatch').innerHTML = S.major
-      ? `★ 권장 과목 일치 <b class="${uniqHit.length >= toks.length * 0.5 ? 'ok' : 'warnc'}">${uniqHit.length} / ${toks.length}</b>`
+    /* 권장 일치도 — 내 학교에 개설된 권장 과목만 분모로 삼는다 */
+    const offered = offeredSet();
+    const have = new Set([...S.selected, ...S.taken].map(normSub));
+    const wanted = wantedSubjects().filter(t => offered.has(normSub(t)));
+    const hit = wanted.filter(t => have.has(normSub(t)));
+    const coreList = (S.program && S.program.coreSubjects || []).filter(t => offered.has(normSub(t)));
+    const coreHit = coreList.filter(t => have.has(normSub(t)));
+    $('#recMatch').innerHTML = ctx()
+      ? (S.program
+          ? `★ 핵심 과목 <b class="${coreHit.length >= coreList.length ? 'ok' : 'warnc'}">${coreHit.length} / ${coreList.length}</b>` +
+            ` · 권장 포함 <b>${hit.length} / ${wanted.length}</b> <span class="note" style="font-size:11px">(내 학교 개설 기준)</span>`
+          : `★ 권장 과목 일치 <b class="${hit.length >= wanted.length * 0.5 ? 'ok' : 'warnc'}">${hit.length} / ${wanted.length}</b> <span class="note" style="font-size:11px">(내 학교 개설 기준)</span>`)
       : '계열을 선택하면 권장 과목과의 일치도가 표시됩니다.';
 
     const sl = $('#selList'); sl.innerHTML = '';
@@ -959,7 +1052,7 @@
   function renderRedesign() {
     const box = $('#redesignBox'); box.innerHTML = '';
     if (!S.major || !S.selected.size) return;
-    const off = [...S.selected].filter(s => !isRecommended(s, S.major));
+    const off = [...S.selected].filter(s => !isRecommended(s));
     const missing = missingRec();
 
     if (!off.length && !missing.length) {
@@ -1001,14 +1094,15 @@
      =========================================================== */
   function hasTopics(subject) {
     if (S.research && S.research.subjects && S.research.subjects[subject]) return true;
-    return !!(S.program && poolFor(subject).length);
+    return poolFor(subject).length > 0;
   }
 
   /* 과목 → 학과 탐구 영역. 어느 영역과도 안 맞으면 null (엉뚱한 주제를 억지로 붙이지 않는다) */
   function areaOf(subject) {
-    if (!S.program) return null;
-    if (!inFocus(subject)) return null;            // 학과가 보지 않는 교과군이면 주제를 붙이지 않는다
-    const map = S.program.areaMap || {};
+    const c = ctx();
+    if (!c || !c.areaMap) return null;
+    if (!inFocus(subject)) return null;            // 진로가 보지 않는 교과군이면 주제를 붙이지 않는다
+    const map = c.areaMap || {};
     // 가장 구체적인(긴) 키워드로 매칭된 영역을 택한다
     let best = null, bestLen = 0;
     for (const [area, keys] of Object.entries(map)) {
@@ -1023,10 +1117,11 @@
     return null;
   }
   function poolFor(subject) {
-    if (!S.program) return [];
+    const c = ctx();
+    if (!c || !c.topicPools) return [];
     const area = areaOf(subject);
-    if (!area) return [];                                  // 학과와 접점이 없는 과목
-    return (S.program.topicPools || {})[area] || [];
+    if (!area) return [];                                  // 진로와 접점이 없는 과목
+    return (c.topicPools || {})[area] || [];
   }
 
   /* used: 이미 다른 과목에 배정된 주제 제목 — 같은 주제가 여러 과목에 중복되지 않게 한다.
@@ -1039,7 +1134,7 @@
        자동 배정에서 영역을 넘나들면 "세계사 — 표집 편향 탐구" 같은 어긋난 조합이 나온다.
        같은 영역에 남은 주제가 없으면 배정하지 않고 비워 둔다(renderDesignOut에서 안내). */
     if (S.topicIdx[subject] > 0) {
-      const extra = Object.entries(S.program.topicPools || {})
+      const extra = Object.entries((ctx() && ctx().topicPools) || {})
         .filter(([a]) => a !== area).flatMap(([, arr]) => arr)
         .filter(t => !(used && used.has(t.title)) && !pool.includes(t));
       if (extra.length) pool = pool.concat(extra);
@@ -1063,7 +1158,7 @@
     }
     const chosen = order[i];
     let chosenArea = area;
-    Object.entries((S.program && S.program.topicPools) || {}).forEach(([a, arr]) => {
+    Object.entries((ctx() && ctx().topicPools) || {}).forEach(([a, arr]) => {
       if ((arr || []).some(t => t.title === chosen.title)) chosenArea = a;
     });
     return { topic: chosen, idx: i, len: order.length, area: chosenArea };
@@ -1126,13 +1221,17 @@
     if (gaps.length) host.appendChild(el('div', { class: 'gapbanner', html:
       `<b>이 설계는 진단 보완점을 반영했습니다</b><br>${gaps.map(g => esc(g.label)).join(' · ')} — 탐구 방법에 데이터 분석을, 산출물에 발표를 우선 포함했습니다.` }));
 
-    const off = picked.filter(s => S.major && !isRecommended(s, S.major) && !S.manual.includes(s));
+    const off = picked.filter(s => ctx() && !isRecommended(s) && !S.manual.includes(s));
     if (off.length) host.appendChild(el('div', { class: 'redesign', html:
       `<h4>권장 외 과목 중심 재설계</h4><p class="note">${esc(off.join(', '))} 을(를) 중심축으로 탐구를 다시 구성했습니다. 선택을 되돌릴 필요는 없고, 이 과목에서 진로와 만나는 지점을 만들면 됩니다.</p>` }));
 
-    /* 배정 순서 — 학과 핵심 교과군 과목을 먼저, 그다음 나머지.
+    /* 배정 순서 — 학과 핵심 과목 → 권장 과목 → 진로 교과군 → 나머지.
        주제 풀이 과목 수보다 적을 수 있으므로 진로와 가까운 과목부터 가져간다. */
-    const ordered = picked.slice().sort((a, b) => (inFocus(b) ? 1 : 0) - (inFocus(a) ? 1 : 0));
+    const weight = x => {
+      const l = recLevel(x);
+      return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) + (inFocus(x) ? 0 : 2);
+    };
+    const ordered = picked.slice().sort((a, b) => weight(a) - weight(b));
 
     const used = new Set();
     const noTopic = [];      // 학과 탐구 영역과 접점이 없는 과목
@@ -1150,8 +1249,7 @@
 
     /* 주제 풀이 모자란 경우 — 같은 주제를 여러 과목에 반복해 붙이지 않고 정직하게 알린다 */
     if (exhausted.length) {
-      const poolSize = S.program
-        ? Object.values(S.program.topicPools || {}).reduce((n, a) => n + a.length, 0) : 0;
+      const poolSize = Object.values((ctx() && ctx().topicPools) || {}).reduce((n, a) => n + a.length, 0);
       host.appendChild(el('div', { class: 'redesign', style: 'border-color:var(--accent);background:rgba(79,140,255,.08)', html:
         `<h4 style="color:var(--accent)">주제를 배정하지 않은 과목 ${exhausted.length}개</h4>` +
         `<p class="note">${esc(exhausted.join(', '))}</p>` +
@@ -1165,20 +1263,20 @@
     }
 
     if (noTopic.length) {
-      const focus = (S.program && (S.program.focusAreas || []).join('·')) || '';
+      const focus = ((ctx() && ctx().focusAreas) || []).join('·');
       host.appendChild(el('div', { class: 'note', style: 'margin-top:12px;border-left:3px solid var(--line);padding-left:10px', html:
         `<b>진로와 직접 이어지지 않는 과목 ${noTopic.length}개</b> — ${esc(noTopic.join(', '))}<br>` +
-        (S.program
-          ? `${esc(S.program.name)}이(가) 중심으로 보는 교과군은 <b>${esc(focus)}</b>입니다. 이 과목들은 그 밖에 있어 진로 탐구를 억지로 붙이지 않았습니다. ` +
+        (focus
+          ? `${esc(ctxName())}이(가) 중심으로 보는 교과군은 <b>${esc(focus)}</b>입니다. 이 과목들은 그 밖에 있어 진로 탐구를 억지로 붙이지 않았습니다. ` +
             `학업역량을 보여 주는 과목으로 충실히 이수하되, 세특은 그 과목 본래의 성취기준에 맞춰 남기는 편이 자연스럽습니다.`
           : `이 과목들의 사전 검증 탐구자료가 아직 없습니다. 없는 자료를 지어내지 않기 위해 비워 둡니다.`) }));
     }
 
     /* 학과 검증 자료 */
-    const res = (S.program && S.program.resources) || [];
+    const res = (ctx() && ctx().resources) || [];
     if (res.length) {
       const box = el('div', { class: 'inq res' });
-      box.appendChild(el('h4', { html: `📚 ${esc(S.program.name)} 추천 도서·참고자료 <span class="note" style="font-size:11.5px">(실재 검증 완료)</span>` }));
+      box.appendChild(el('h4', { html: `📚 ${esc(ctxName())} 추천 도서·참고자료 <span class="note" style="font-size:11.5px">(실재 검증 완료)</span>` }));
       const ul = el('ul');
       res.forEach(r => ul.appendChild(el('li', { html:
         `<span class="v-ok">확인됨</span><b>[${esc(r.kind)}]</b> 《${esc(r.title)}》 — ${esc(r.author)} · ${esc(r.publisher)}` +
@@ -1469,8 +1567,9 @@
         const o = meta[s] || {};
         const tr = el('tr');
         const isManual = S.manual.includes(s);
+        const lv = recLevel(s);
         [s, isManual ? '공동교육과정·전문교과' : (o.area || '-'), isManual ? '직접 추가' : (o.category || '-'),
-         String(o.credits || 3), major && isRecommended(s, major) ? '★ 권장' : '자유 선택']
+         String(o.credits || 3), lv === 'core' ? '★ 핵심' : lv === 'rec' ? '★ 권장' : '자유 선택']
           .forEach(v => tr.appendChild(el('td', { text: v })));
         tb.appendChild(tr);
       });
@@ -1542,9 +1641,9 @@
       (S.research.subjects[s].books || []).forEach(b => books.push({ subj: s, ...b }));
       (S.research.subjects[s].papers || []).forEach(pp => papers.push({ subj: s, ...pp }));
     });
-    const progRes = (S.program && S.program.resources) || [];
+    const progRes = (ctx() && ctx().resources) || [];
     if (progRes.length) {
-      r.appendChild(el('h3', { text: `${S.program.name} 학과 자료 (${progRes.length}건)` }));
+      r.appendChild(el('h3', { text: `${ctxName()} 자료 (${progRes.length}건)` }));
       const t = el('table'); t.innerHTML = '<thead><tr><th>구분</th><th>제목</th><th>저자</th><th>출판·수록</th><th>찾는 법</th></tr></thead>';
       const tb = el('tbody');
       progRes.forEach(x => { const tr = el('tr'); [x.kind, x.title, x.author, x.publisher, x.find].forEach(v => tr.appendChild(el('td', { text: v || '' }))); tb.appendChild(tr); });
@@ -1621,11 +1720,11 @@
       const { design } = phasesInScope();
       let over = 0;
       design.forEach(p => {
-        const opts = (p.options || []).filter(o => isRecommended(o.subject, S.major));
-        /* 우선순위: ① 계열 권장 목록에 이름으로 들어 있는 과목 ② 학과 핵심 교과군 과목 ③ 나머지 */
+        const opts = (p.options || []).filter(o => isRecommended(o.subject));
+        /* 우선순위: ① 학과 핵심 과목 ② 권장 과목 ③ 나머지 */
         const rank = o => {
-          const named = recTokens(S.major).some(t => o.subject === t || o.subject.includes(t) || t.includes(o.subject));
-          return (named ? 0 : 2) - (inFocus(o.subject) ? 1 : 0);
+          const l = recLevel(o.subject);
+          return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) - (inFocus(o.subject) ? 0.5 : 0);
         };
         opts.sort((a, b) => rank(a) - rank(b));
         /* ★ 학기별 택N 상한을 넘겨 고르지 않는다 — 실제로 선택할 수 없는 조합을 만들지 않기 위함 */

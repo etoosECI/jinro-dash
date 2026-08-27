@@ -19,3 +19,14 @@ node tools/e2e/fault-and-print.mjs    # 깨진 JSON 내성 · 지연 로딩 · 2
 ```bash
 node tools/e2e/all-programs.mjs
 ```
+
+`majors-only.mjs` 는 학과를 고르지 않고 **계열만** 선택했을 때도
+중심 교과군 밖 과목이 접히는지, 계열 공통 주제로 설계가 되는지 확인합니다.
+
+`program-subjects.mjs` 는 34개 학과가 **자기 핵심 과목만** 고르는지,
+목록 밖 과목이 자동 선택되지 않는지 확인합니다. 학과 ID를 인자로 주면 그 학과만 자세히 봅니다.
+
+```bash
+node tools/e2e/program-subjects.mjs                 # 34개 전수
+node tools/e2e/program-subjects.mjs medicine,law    # 지정 학과 상세
+```

@@ -7,7 +7,7 @@
       "majorId": "eng",
       "field": "의약계열",
       "path": "programs/medicine.json",
-      "topicCount": 9
+      "topicCount": 14
     },
     {
       "programId": "semiconductor",
@@ -15,7 +15,7 @@
       "majorId": "eng",
       "field": "공학계열",
       "path": "programs/semiconductor.json",
-      "topicCount": 5
+      "topicCount": 10
     },
     {
       "programId": "business",
@@ -23,7 +23,7 @@
       "majorId": "soc",
       "field": "상경계열",
       "path": "programs/business.json",
-      "topicCount": 5
+      "topicCount": 13
     },
     {
       "programId": "sociology",
@@ -31,7 +31,7 @@
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/sociology.json",
-      "topicCount": 5
+      "topicCount": 14
     }
   ]
 }

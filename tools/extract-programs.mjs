@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { EXTRA } from './extra-topics.mjs';
 
 const ROOT = path.resolve('.');
 const SRC = process.argv[2];
@@ -29,14 +30,24 @@ const ID = { medicine: 'medicine', semi: 'semiconductor', biz: 'business', soc: 
 
 /* 2022 개정 과목명을 탐구 영역에 정확히 붙이기 위한 보강 키워드.
    (원본은 '물리'만 있어 "전자기와 양자" 같은 과목이 엉뚱한 영역으로 떨어졌다) */
+/* focusAreas 보강 — 원본은 국·수·사 등 주요 교과만 담고 있어
+   '정보' 교과군의 데이터 과학·인공지능 기초가 모든 학과에서 배제됐다.
+   네 학과 모두 데이터/융합 영역 주제를 갖고 있으므로 열어 준다. */
+const FOCUS_EXTRA = {
+  medicine: ['정보'],
+  semi: ['정보', '기술'],
+  biz: ['정보'],
+  soc: ['정보'],
+};
+
 const AREA_EXTRA = {
   medicine: { 생명: ['유전', '생물'], 화학: ['반응'], 물리: ['역학', '전자기', '양자', '에너지'],
               수학: ['대수', '통계'], 융합: ['데이터', '소프트웨어'] },
   semi: { 물리: ['역학', '전자기', '양자', '에너지'], 화학: ['반응', '물질'],
           수학: ['대수', '통계'], 융합: ['데이터', '소프트웨어', '공학', '기술'] },
-  biz: { 경제: ['금융', '시장'], 사회: ['국제', '도시', '윤리'], 수학: ['대수', '경제 수학'],
+  biz: { 경제: ['금융', '시장'], 사회: ['국제', '도시', '윤리'], 수학: ['대수', '경제 수학', '데이터', '소프트웨어'],
          국어: ['주제 탐구', '문학'] },
-  soc: { 사회: ['국제', '도시', '기후'], 윤리: ['인문학'], 수학: ['대수', '수학'],
+  soc: { 사회: ['국제', '도시', '기후'], 윤리: ['인문학'], 수학: ['대수', '수학', '데이터', '소프트웨어'],
          국어: ['주제 탐구', '문학', '화법'] },
 };
 
@@ -47,6 +58,7 @@ for (const [key, m] of Object.entries(MAJORS)) {
   const programId = ID[key] || key;
   const parent = PARENT[key] || {};
   const topicPools = {};
+  const extra = EXTRA[key] || {};          // 보강 주제 (tools/extra-topics.mjs)
   for (const [area, arr] of Object.entries(m.pools || {})) {
     topicPools[area] = arr.map(t => ({
       title: t.t,
@@ -57,7 +69,11 @@ for (const [key, m] of Object.entries(MAJORS)) {
       setuk: t.s,
       extend: t.x,
       tags: t.tags || [],
-    }));
+    })).concat(extra[area] || []);
+  }
+  // 원본에 없던 영역이 보강분에만 있으면 그것도 추가한다
+  for (const [area, arr] of Object.entries(extra)) {
+    if (!topicPools[area]) topicPools[area] = arr.slice();
   }
   const doc = {
     schemaVersion: '4.1',
@@ -66,7 +82,7 @@ for (const [key, m] of Object.entries(MAJORS)) {
     majorId: parent.majorId || null,
     field: parent.field || m.field,
     entryNote: parent.entryNote || '',
-    focusAreas: m.kyo,                 // 이 학과가 중심으로 보는 교과군
+    focusAreas: [...new Set([...m.kyo, ...(FOCUS_EXTRA[key] || [])])],   // 이 학과가 중심으로 보는 교과군
     recommendKeywords: m.rec,          // 과목명에 이 키워드가 있으면 '권장'
     areaMap: Object.fromEntries(Object.entries(m.areas).map(([a, keys]) =>
       [a, [...new Set([...keys, ...(((AREA_EXTRA[key] || {})[a]) || [])])]])),   // 과목 → 탐구 영역 매핑

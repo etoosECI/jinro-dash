@@ -183,6 +183,10 @@ if (pidx) {
       });
       if (!Array.isArray(t.method) || !t.method.length) err(f, `${area} 영역 주제 "${t.title}": method(탐구 방법 단계)가 비어 있습니다`);
     }));
+    if (!Array.isArray(doc.focusAreas) || !doc.focusAreas.length)
+      err(f, 'focusAreas가 비어 있습니다 — 계열이 뒤섞이지 않게 하는 필수 항목입니다');
+    const total = Object.values(pools).reduce((n, a) => n + (a || []).length, 0);
+    if (total < 8) warn(f, `탐구 주제가 ${total}개뿐입니다. 학생이 보통 8~12과목을 고르므로 12개 이상을 권합니다`);
     (doc.areaMap ? Object.keys(doc.areaMap) : []).forEach(a => {
       if (!pools[a]) warn(f, `areaMap의 "${a}" 영역에 대응하는 topicPools가 없습니다`);
     });

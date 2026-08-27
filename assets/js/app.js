@@ -632,14 +632,18 @@
       const c = el('div', { class: 'progcard' + (S.program && S.program.programId === p.programId ? ' on' : ''), tabindex: '0', role: 'button' });
       c.appendChild(el('div', { class: 'f', text: p.field || '' }));
       c.appendChild(el('div', { class: 'm', text: p.name }));
-      c.appendChild(el('div', { class: 'c', text: `전용 탐구 주제 ${p.topicCount}개` }));
+      c.appendChild(el('div', { class: 'c', text: p.ownTopicCount
+        ? `탐구 주제 ${p.topicCount}개 (학과 고유 ${p.ownTopicCount})`
+        : `탐구 주제 ${p.topicCount}개 (계열 공통)` }));
       const pick = () => selectProgram(p.programId);
       c.onclick = pick;
       c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
       host.appendChild(c);
     });
-    /* 학과 데이터가 아직 없는 나머지는 '준비 중'으로 정직하게 표시 */
-    (S.major.departments || []).filter(d => !list.some(p => p.name === d)).slice(0, 8).forEach(d => {
+    /* 학과 데이터가 아직 없는 나머지는 '준비 중'으로 정직하게 표시.
+       이름 표기가 달라도(경영학 ↔ 경영학과) 같은 학과면 중복 카드를 만들지 않는다. */
+    const norm = x => String(x || '').replace(/\s/g, '').replace(/(학과|과|학부|전공)$/, '');
+    (S.major.departments || []).filter(d => !list.some(p => norm(p.name) === norm(d))).slice(0, 8).forEach(d => {
       const c = el('div', { class: 'progcard soon' });
       c.appendChild(el('div', { class: 'f', text: S.major.field || '' }));
       c.appendChild(el('div', { class: 'm', text: d }));
@@ -814,14 +818,18 @@
       builder.appendChild(g);
     }
 
-    /* 설계 대상 학기 풀 */
+    /* 설계 대상 학기 풀 — 진로 관련 교과군 과목을 먼저, 그 외는 접어서 보여 준다.
+       ★ 사회계열 학생 화면에 물리학·고급 물리학이 잔뜩 깔려 있으면 설계가 이과로 보인다. */
     design.forEach(p => {
       const g = el('div', { class: 'pool-group' });
       const picked = (p.options || []).filter(o => S.selected.has(o.subject)).length;
       const rule = p.requiredPickCount ? `${picked} / ${p.requiredPickCount}과목 선택` : `${picked}과목 선택`;
       g.appendChild(el('div', { class: 'gh', html: `<span>${esc(p.label)}</span><span class="rule">${esc(rule)}</span>` }));
-      const pl = el('div', { class: 'pool' });
-      (p.options || []).forEach(o => {
+
+      const opts = p.options || [];
+      const near = S.program ? opts.filter(o => inFocus(o.subject)) : opts;
+      const far = S.program ? opts.filter(o => !inFocus(o.subject)) : [];
+      const chip = o => {
         const rec = S.major && isRecommended(o.subject, S.major);
         const gt = gapTagsFor(o.subject);
         const b = el('span', {
@@ -840,10 +848,33 @@
           S.selected.has(o.subject) ? S.selected.delete(o.subject) : S.selected.add(o.subject);
           renderBuilder(); persist(null);
         };
-        pl.appendChild(b);
-      });
-      if (!(p.options || []).length) pl.appendChild(el('span', { class: 'note', text: '개설 과목 데이터 미입력' }));
-      g.appendChild(pl);
+        return b;
+      };
+
+      if (!opts.length) {
+        g.appendChild(el('div', { class: 'pool' }, [el('span', { class: 'note', text: '개설 과목 데이터 미입력' })]));
+      } else {
+        const pl = el('div', { class: 'pool' });
+        near.forEach(o => pl.appendChild(chip(o)));
+        if (!near.length) pl.appendChild(el('span', { class: 'note', text: '이 구간에는 진로 관련 교과군 과목이 개설되어 있지 않습니다.' }));
+        g.appendChild(pl);
+
+        /* 진로와 거리가 있는 과목 — 접어 두되 선택은 언제든 가능 */
+        if (far.length) {
+          const pickedFar = far.filter(o => S.selected.has(o.subject)).length;
+          const det = el('details', { style: 'margin-top:10px' });
+          if (pickedFar || S.showFar) det.open = true;
+          det.appendChild(el('summary', { class: 'note', style: 'cursor:pointer',
+            html: `그 외 개설 과목 ${far.length}개 보기 <span class="note" style="font-size:11px">— ` +
+              `${esc((S.program && (S.program.focusAreas || []).join('·')) || '')} 밖 교과군` +
+              (pickedFar ? ` · <b style="color:var(--accent)">${pickedFar}개 선택 중</b>` : '') + `</span>` }));
+          const pl2 = el('div', { class: 'pool', style: 'margin-top:8px' });
+          far.forEach(o => pl2.appendChild(chip(o)));
+          det.appendChild(pl2);
+          det.addEventListener('toggle', () => { S.showFar = det.open; });
+          g.appendChild(det);
+        }
+      }
       builder.appendChild(g);
     });
 

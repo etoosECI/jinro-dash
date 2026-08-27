@@ -12,3 +12,10 @@ node tools/e2e/fault-and-print.mjs    # 깨진 JSON 내성 · 지연 로딩 · 2
 
 스크립트 상단의 `executablePath` 는 환경에 맞게 고쳐야 할 수 있습니다.
 `fault-and-print.mjs` 는 임시로 깨진 학교 JSON을 만들었다가 끝나면 되돌립니다.
+
+`all-programs.mjs` 는 34개 학과를 모두 돌며 계열이 뒤섞인 과목이 없는지,
+탐구 주제가 배정되는지, "준비 중" 카드가 중복되지 않는지 한 번에 점검합니다.
+
+```bash
+node tools/e2e/all-programs.mjs
+```

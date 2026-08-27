@@ -1,37 +1,311 @@
 {
-  "schemaVersion": "4.1",
+  "schemaVersion": "4.2",
   "programs": [
+    {
+      "programId": "mechanical",
+      "name": "기계공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/mechanical.json",
+      "topicCount": 13,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "electrical",
+      "name": "전기전자공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/electrical.json",
+      "topicCount": 13,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "computer",
+      "name": "컴퓨터공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/computer.json",
+      "topicCount": 13,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "chemeng",
+      "name": "화학공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/chemeng.json",
+      "topicCount": 13,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "materials",
+      "name": "신소재공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/materials.json",
+      "topicCount": 13,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "semiconductor",
+      "name": "반도체공학과",
+      "majorId": "eng",
+      "field": "공학계열",
+      "path": "programs/semiconductor.json",
+      "topicCount": 11,
+      "ownTopicCount": 0
+    },
     {
       "programId": "medicine",
       "name": "의예과",
       "majorId": "eng",
       "field": "의약계열",
       "path": "programs/medicine.json",
-      "topicCount": 14
+      "topicCount": 23,
+      "ownTopicCount": 14
     },
     {
-      "programId": "semiconductor",
-      "name": "반도체공학",
+      "programId": "dentistry",
+      "name": "치의예과",
       "majorId": "eng",
-      "field": "공학계열",
-      "path": "programs/semiconductor.json",
-      "topicCount": 10
+      "field": "의약계열",
+      "path": "programs/dentistry.json",
+      "topicCount": 11,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "pharmacy",
+      "name": "약학과",
+      "majorId": "eng",
+      "field": "의약계열",
+      "path": "programs/pharmacy.json",
+      "topicCount": 11,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "nursing",
+      "name": "간호학과",
+      "majorId": "eng",
+      "field": "의약계열",
+      "path": "programs/nursing.json",
+      "topicCount": 11,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "mathematics",
+      "name": "수학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/mathematics.json",
+      "topicCount": 11,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "statistics",
+      "name": "통계학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/statistics.json",
+      "topicCount": 11,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "physics",
+      "name": "물리학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/physics.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "astronomy",
+      "name": "천문우주학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/astronomy.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "chemistry",
+      "name": "화학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/chemistry.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "biology",
+      "name": "생명과학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/biology.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "earthsci",
+      "name": "지구환경과학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/earthsci.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "oceanography",
+      "name": "해양학과",
+      "majorId": "nat",
+      "field": "이학계열",
+      "path": "programs/oceanography.json",
+      "topicCount": 10,
+      "ownTopicCount": 1
     },
     {
       "programId": "business",
-      "name": "경영학",
+      "name": "경영학과",
       "majorId": "soc",
       "field": "상경계열",
       "path": "programs/business.json",
-      "topicCount": 13
+      "topicCount": 21,
+      "ownTopicCount": 13
+    },
+    {
+      "programId": "economics",
+      "name": "경제학과",
+      "majorId": "soc",
+      "field": "상경계열",
+      "path": "programs/economics.json",
+      "topicCount": 10,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "politics",
+      "name": "정치외교학과",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/politics.json",
+      "topicCount": 10,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "publicadmin",
+      "name": "행정학과",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/publicadmin.json",
+      "topicCount": 9,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "law",
+      "name": "법학과",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/law.json",
+      "topicCount": 10,
+      "ownTopicCount": 2
     },
     {
       "programId": "sociology",
-      "name": "사회학",
+      "name": "사회학과",
       "majorId": "soc",
       "field": "사회계열",
       "path": "programs/sociology.json",
-      "topicCount": 14
+      "topicCount": 22,
+      "ownTopicCount": 14
+    },
+    {
+      "programId": "media",
+      "name": "언론정보학과",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/media.json",
+      "topicCount": 10,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "psychology",
+      "name": "심리학과",
+      "majorId": "soc",
+      "field": "사회계열",
+      "path": "programs/psychology.json",
+      "topicCount": 10,
+      "ownTopicCount": 2
+    },
+    {
+      "programId": "korean",
+      "name": "국어국문학과",
+      "majorId": "hum",
+      "field": "인문계열",
+      "path": "programs/korean.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "english",
+      "name": "영어영문학과",
+      "majorId": "hum",
+      "field": "어문계열",
+      "path": "programs/english.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "german",
+      "name": "독어독문학과",
+      "majorId": "hum",
+      "field": "어문계열",
+      "path": "programs/german.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "chinese",
+      "name": "중어중문학과",
+      "majorId": "hum",
+      "field": "어문계열",
+      "path": "programs/chinese.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "history",
+      "name": "사학과",
+      "majorId": "hum",
+      "field": "인문계열",
+      "path": "programs/history.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "philosophy",
+      "name": "철학과",
+      "majorId": "hum",
+      "field": "인문계열",
+      "path": "programs/philosophy.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "arthistory",
+      "name": "고고미술사학과",
+      "majorId": "hum",
+      "field": "인문계열",
+      "path": "programs/arthistory.json",
+      "topicCount": 11,
+      "ownTopicCount": 1
+    },
+    {
+      "programId": "education",
+      "name": "교육학과",
+      "majorId": "hum",
+      "field": "사범계열",
+      "path": "programs/education.json",
+      "topicCount": 12,
+      "ownTopicCount": 2
     }
   ]
 }

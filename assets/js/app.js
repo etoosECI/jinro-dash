@@ -1756,6 +1756,15 @@
   /* ===========================================================
      부팅
      =========================================================== */
+  /* Expert-Course 연결(bridge.js)용 — 상태와 몇 개 함수만 연다 */
+  global_expose();
+  function global_expose() {
+    window.JinroHost = { S, go, persist, renderBuilder: () => renderBuilder(), banner };
+    const rb = renderBuilder, rr = renderReport;
+    renderBuilder = function () { rb.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onBuilder(S); };
+    renderReport = function () { rr.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onReport(S); };
+  }
+
   async function boot() {
     setTheme(Store.theme.get());
     $$('#themeSeg button').forEach(b => b.onclick = () => setTheme(b.dataset.t));

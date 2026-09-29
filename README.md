@@ -364,3 +364,20 @@ legacy/                        v3 이전 단일 파일 버전 (참고용 보관)
 - 학점배당표 편제 확대 (현재 휘문·중동·은광여·숙명여 4개교)
 - 탐구 자료 과목 확대 (현재 10개 과목)
 - 전국 지역 확대 (구조는 준비 완료, 학교 JSON만 추가하면 됨)
+
+---
+
+## Expert-Course 연결 (입시 전문가 과정 실습 도구)
+
+같은 주소(`etooseci.github.io`) 아래의 [Expert-Course](https://etooseci.github.io/Expert-Course/)와 **브라우저 저장소를 함께 읽어** 연결됩니다. 서버 전송은 없습니다.
+연결 코드는 `assets/js/bridge.js` 한 파일이며, `app.js`는 `window.JinroHost`(상태와 몇 개 함수)를 열고 렌더가 끝날 때 `JinroBridge.onBuilder / onReport`를 부르기만 합니다.
+
+| 위치 | jinro-dash에서 하는 일 | 읽는 데이터 |
+|---|---|---|
+| 머리글 | `Expert-Course ↗` — 현재 설계와 연결된 상태로 학생부 정밀분석 보드 열기 | — |
+| STEP 3 생기부 진단 | Expert-Course **학생부 정밀분석**에 붙여넣은 원문 가져오기 → 키워드 자동 진단 | `expertCourse.hakjong.v1` |
+| STEP 5 (3학년 진입) | Expert-Course **상담 진단실** 학생의 2학년 이수 과목을 편제와 대조해 체크 | `expertCourse.students.v1` |
+| STEP 6 리포트 | 이 설계와 연결된 정밀분석의 핵심경쟁력·강점·약점·검증사항 요약 | `expertCourse.hakjong.v1` |
+
+반대 방향으로 Expert-Course는 jinro-dash의 저장된 설계(`jinro.profiles.v4`), 학교 편제(`data/schools`), 학과 핵심·권장 과목(`data/programs`), 생기부 자동 진단 결과를 읽습니다.
+두 저장소의 저장 키나 데이터 구조를 바꿀 때는 상대 쪽 연결 코드(`bridge.js`, Expert-Course `js/jinro-link.js`)도 함께 확인하세요.

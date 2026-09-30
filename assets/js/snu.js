@@ -7,7 +7,7 @@
   'use strict';
   const { $, el, esc, loadJSON } = Core;
 
-  const V = { data: null, group: 'all', sortKey: 'susiRate', sortDir: -1, sel: null, xKey: 'n23', yKey: 'susiRate', S: null };
+  const V = { data: null, group: 'all', sortKey: 'genRate', sortDir: -1, sel: null, xKey: 'n23', yKey: 'genRate', S: null };
 
   /* ---------- 작은 통계 도구 ---------- */
   function ranks(a) {
@@ -45,7 +45,7 @@
     planPro: s => s.plan2026.pro.length,
     enroll: s => s.enroll,
   };
-  const TGT = { susiRate: s => s.derived.susiRate, susiShare: s => s.derived.susiShare, susiAvg: s => s.derived.susiAvg };
+  const TGT = { genRate: s => s.derived.genRate, genAvg: s => s.derived.genAvg, susiRate: s => s.derived.susiRate, susiShare: s => s.derived.susiShare, susiAvg: s => s.derived.susiAvg };
   const groupOk = s => V.group === 'all' || s.group === V.group;
 
   /* ---------- 진입점 ---------- */
@@ -72,6 +72,27 @@
     const fg = el('div', { class: 'snu-find' });
     D.findings.forEach(f => fg.appendChild(el('div', { class: 'snu-fcard', html: `<h4>${esc(f.title)}</h4><p>${esc(f.body)}</p>` })));
     host.appendChild(fg);
+
+    /* 1-b. 유형별 분석 (일반전형 기준) */
+    host.appendChild(el('div', { class: 'sec-title', style: 'margin-top:24px', text: '유형별 분석 — 일반전형 추정 합격 기준' }));
+    host.appendChild(el('p', { class: 'note', html: '지역균형은 학교당 최대 2명이므로 <b>일반전형 추정 = 수시 − 2명</b>(연도별, 하한)으로 계산했습니다. 합격자가 많은 학교의 차이는 이 일반전형에서 나옵니다.' }));
+    const mx = Math.max(...(D.subTypes || []).map(t => t.genRate));
+    const tt = el('table', { class: 'cmp snu-type' });
+    tt.innerHTML = '<thead><tr><th>세부 유형</th><th>재적 대비 일반전형 합격률</th><th class="num">일반전형/년</th><th class="num">운영 과목</th><th class="num">심화·전문</th><th class="num">1학년 A%</th><th class="num">2학년 평균</th></tr></thead><tbody>' +
+      (D.subTypes || []).map(t => `<tr><td><b>${esc(t.type)}</b><div class="aoc">${esc(t.members.join(' · '))}</div></td>` +
+        `<td><div class="hbar"><i class="${t.group === '일반고' ? 'g-il' : 'g-ja'}" style="width:${(t.genRate / mx * 100).toFixed(1)}%"></i><span>${t.genRate.toFixed(2)}%</span></div></td>` +
+        `<td class="num">${t.genAvg}명</td><td class="num">${t.n23}</td><td class="num">${t.nSim}</td><td class="num">${t.g1A}</td><td class="num">${t.g2Avg}</td></tr>`).join('') + '</tbody>';
+    host.appendChild(el('div', { class: 'snu-scroll' }, [tt]));
+    const cg = D.corrByGroup || [];
+    const cell = (g, f) => { const c = cg.find(x => x.group === g && x.feature === f); if (!c) return '<td class="num">—</td>';
+      const w = Math.abs(c.rho) * 50, sig = c.p < 0.05;
+      return `<td><div class="dbar"><span class="mid"></span><i class="${c.rho < 0 ? 'neg' : 'pos'}" style="${c.rho < 0 ? 'right:50%' : 'left:50%'};width:${w}%"></i></div>` +
+        `<div class="dval">${sig ? '<b>' : ''}${c.rho >= 0 ? '+' : ''}${c.rho.toFixed(2)}${sig ? ' ★</b>' : ''} <span class="aoc">p=${c.p.toFixed(3)}</span></div></td>`; };
+    const ct = el('table', { class: 'cmp snu-cg' });
+    ct.innerHTML = '<thead><tr><th>학교 특성</th><th>자사고군 9 · 일반전형 합격률과 ρ</th><th>일반고 9 · 일반전형 합격률과 ρ</th></tr></thead><tbody>' +
+      Object.entries(D.features).filter(([k]) => k !== 'enroll').map(([k, t]) => `<tr><td>${esc(t)}</td>${cell('자사고군', k)}${cell('일반고', k)}</tr>`).join('') + '</tbody>';
+    host.appendChild(el('div', { class: 'snu-scroll', style: 'margin-top:12px' }, [ct]));
+    host.appendChild(el('p', { class: 'cmp-note', html: '<b>읽는 법</b> — ★는 p&lt;0.05. 자사고군은 <b>교육과정의 깊이</b>(고급·심화 수학, 운영 과목, 심화·전문교과)가, 일반고는 <b>1학년 공통과목 A비율 = 교내 상위권 층의 두께</b>가 일반전형과 함께 움직입니다. 같은 서류평가라도 학교 유형에 따라 합격자 수를 가르는 조건이 다르다는 뜻입니다. 각 9개교라 표본이 작으니 방향으로만 읽으세요.' }));
 
     /* 2. 평가 틀 → 역추산 */
     host.appendChild(el('div', { class: 'sec-title', style: 'margin-top:24px', text: '서울대 서류평가 항목 → 관찰 지표 → 이 자료의 결과' }));
@@ -158,7 +179,7 @@
     ticks(x0 - padX, x1 + padX, 6).forEach(v => { g += `<text class="tick" x="${sx(v)}" y="${H - m.b + 18}" text-anchor="middle">${v}</text>`; });
     g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}"/>`;
     g += `<text class="axl" x="${(W + m.l) / 2}" y="${H - 8}" text-anchor="middle">${esc(D.features[V.xKey])}</text>`;
-    g += `<text class="axl" transform="translate(14 ${(H - m.b + m.t) / 2}) rotate(-90)" text-anchor="middle">${esc(D.targets[V.yKey])}${V.yKey === 'susiAvg' ? ' (명)' : ' (%)'}</text>`;
+    g += `<text class="axl" transform="translate(14 ${(H - m.b + m.t) / 2}) rotate(-90)" text-anchor="middle">${esc(D.targets[V.yKey])}${/Avg$/.test(V.yKey) ? ' (명)' : ' (%)'}</text>`;
     const top = pts.slice().sort((a, b) => b.y - a.y).slice(0, 3).map(p => p.s.id);
     pts.forEach(p => {
       const cx = sx(p.x), cy = sy(p.y), cls = p.s.group === '일반고' ? 'g-il' : 'g-ja', on = V.sel === p.s.id;
@@ -204,6 +225,8 @@
     ['s25', '수시 25', s => (s.results['2025'] || {}).susi],
     ['s26', '수시 26', s => (s.results['2026'] || {}).susi],
     ['jungsiAvg', '정시 평균', s => s.derived.jungsiAvg],
+    ['genAvg', '일반전형(추정)', s => s.derived.genAvg],
+    ['genRate', '재적 대비 일반전형%', s => s.derived.genRate],
     ['susiRate', '재적 대비 수시%', s => s.derived.susiRate],
     ['susiShare', '수시 전환율%', s => s.derived.susiShare],
     ['n23', '개설 2·3학년', s => FEAT.n23(s)],
@@ -213,7 +236,7 @@
   ];
   function renderTable() {
     const host = $('#snuTable'); if (!host) return;
-    const col = COLS.find(c => c[0] === V.sortKey) || COLS[6];
+    const col = COLS.find(c => c[0] === V.sortKey) || COLS[7];
     const rows = V.data.schools.filter(groupOk).slice().sort((a, b) => {
       const va = col[2](a), vb = col[2](b);
       if (va == null) return 1; if (vb == null) return -1;
@@ -232,13 +255,13 @@
         const v = c[2](s);
         tr.appendChild(el('td', { class: i ? 'num' : '', html: i === 0
           ? `<b>${esc(s.name)}</b><div class="aoc">${esc(s.group === '일반고' ? '일반고' : s.typeLabel.split('(')[0])} · ${esc(s.region)}</div>`
-          : (v == null ? '<span class="badge none">—</span>' : fmt(v, c[0] === 'susiRate' ? 2 : 1)) }));
+          : (v == null ? '<span class="badge none">—</span>' : fmt(v, /Rate$/.test(c[0]) ? 2 : 1)) }));
       });
       tb.appendChild(tr);
     });
     t.appendChild(tb);
     host.innerHTML = ''; host.appendChild(t);
-    host.appendChild(el('p', { class: 'note', html: '수시 전환율 = 3개년 평균 수시 ÷ (수시+정시). 정시에는 졸업생(N수) 합격이 섞여 있습니다. “—”는 100위 밖이거나 자료가 없는 경우입니다.' }));
+    host.appendChild(el('p', { class: 'note', html: '<b>일반전형(추정)</b> = 연도별 (수시 − 지역균형 최대 2명)의 3개년 평균(하한 추정). 수시 전환율 = 3개년 평균 수시 ÷ (수시+정시). 정시에는 졸업생(N수) 합격이 섞여 있습니다. “—”는 100위 밖이거나 자료가 없는 경우입니다.' }));
   }
   function sortBy(k) { if (V.sortKey === k) V.sortDir *= -1; else { V.sortKey = k; V.sortDir = k === 'name' ? 1 : -1; } renderTable(); }
   function select(id) { V.sel = V.sel === id ? null : id; renderScatter(); renderTable(); renderDetail(); if (V.sel) { const d = $('#snuDetail'); d && d.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
@@ -263,7 +286,7 @@
       <div class="grid2" style="margin-top:12px">
         <div><div class="sec-title">서울대 합격 5개년 (수시/정시)</div><div class="ybars">${bars}</div>
           <div class="snu-legend"><span><i class="lg-s"></i>수시</span><span><i class="lg-j"></i>정시</span><span class="aoc">2022·2023은 등록 기준</span></div></div>
-        <div><div class="sec-title">역추산 해석</div><p class="snu-read">${esc(s.reading)}</p>
+        <div><div class="sec-title">역추산 해석</div><p class="snu-read"><b>일반전형 추정 ${s.derived.genAvg}~${s.derived.genMaxAvg}명/년</b> (지균 2~0명 가정) · 재적 대비 ${s.derived.genRate}% · ${esc(s.subType)}</p><p class="snu-read" style="margin-top:6px">${esc(s.reading)}</p>
           ${s.achNote ? `<p class="note" style="margin-top:8px">⚠ ${esc(s.achNote)}</p>` : ''}</div>
       </div>
       <div class="grid2" style="margin-top:14px">
@@ -353,7 +376,10 @@
     let avgs = [], As = [];
     rows.filter(r => +r.grade === 2 && CORE2.includes(nk(r.subject))).forEach(r => [r.sem1, r.sem2].forEach(m => { if (m && m.avg != null) { avgs.push(m.avg); if (m.A != null) As.push(m.A); } }));
     const mean = a => a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : null;
+    const g1 = [];
+    rows.filter(r => +r.grade === 1 && /^(공통국어|공통수학|공통영어|통합사회|통합과학)/.test(nz(r.subject))).forEach(r => [r.sem1, r.sem2].forEach(m => { if (m && m.A != null) g1.push(m.A); }));
     return {
+      g1A: mean(g1),
       names, N, cats, pro, explore: explore.size,
       sci: SCI8.filter(x => N.has(nz(x))), calc2: N.has('미적분Ⅱ'), geo: N.has('기하'),
       lang: [...names].some(x => /독일어|프랑스어|스페인어|중국어|일본어|러시아어|아랍어|베트남어|한문/.test(x)),
@@ -367,49 +393,64 @@
   function diagnose(S) {
     const D = V.data, sc = S.school; if (!sc || !D) return null;
     const me = schoolProfile(sc);
-    const isIlban = /일반고|자율형공립/.test(me.type);
-    const peers = D.schools.filter(s => s.group === (isIlban ? '일반고' : '자사고군'));
+    /* 비교 기준: 같은 유형 9개교 (자사고군은 자공고 포함 — 제공 자료의 분류를 따름) */
+    const isIlban = /일반고/.test(me.type) && !/자율형/.test(me.type);
+    const jigyunOK = !/자율형사립|자사고|특목|외국어|국제|과학|영재/.test(me.type);
+    const G = isIlban ? '일반고' : '자사고군';
+    const peers = D.schools.filter(s => s.group === G);
+    const qp = f => quart(peers.map(f)), qa = f => quart(D.schools.map(f));
     const B = {
-      op: quart(D.schools.map(s => s.ach2025.n23)), opPeer: quart(peers.map(s => s.ach2025.n23)),
-      adv: quart(D.schools.map(s => s.ach2025.advMath.length + s.ach2025.advSci.length)),
-      g2A: quart(D.schools.map(s => s.ach2025.g2A)), g2Avg: quart(D.schools.map(s => s.ach2025.g2Avg)),
-      ex: quart(D.schools.map(s => s.plan2026.nExplore)), pro: quart(D.schools.map(s => s.plan2026.pro.length)),
+      op: qp(s => s.ach2025.n23), opAll: qa(s => s.ach2025.n23),
+      adv: qp(s => s.ach2025.advMath.length + s.ach2025.advSci.length),
+      g1A: qp(s => s.ach2025.g1A), g2A: qa(s => s.ach2025.g2A), g2Avg: qp(s => s.ach2025.g2Avg),
+      ex: qp(s => s.plan2026.nExplore), pro: qp(s => s.plan2026.pro.length),
     };
-    const peerLbl = isIlban ? '일반고 9' : '자사고군 9';
+    const rho = f => { const c = (D.corrByGroup || []).find(x => x.group === G && x.feature === f); return c ? (c.rho >= 0 ? '+' : '') + c.rho.toFixed(2) : '—'; };
+    const KEY = isIlban ? ['g1A', 'planPro'] : ['advMath', 'n23', 'nSim'];
+    const star = f => KEY.includes(f) ? '★ ' : '';
+    const peerLbl = G === '일반고' ? '일반고 9' : '자사고군 9';
     const items = [];
     const add = o => items.push(o);
     const tier = (v, q) => v == null ? 'none' : v < q.q1 ? 'bad' : v < q.med ? 'warn' : v >= q.q3 ? 'good' : 'neutral';
+    const qtxt = q => `${peerLbl} 중앙값 ${q.med} (하위 25% ${q.q1} · 상위 25% ${q.q3})`;
 
-    /* ── 학교 구조 요인 ── */
-    add({ owner: '학교', item: '운영 과목 폭', eval: '학업태도 · 교육환경 맥락', level: tier(me.op, B.op), value: me.op,
-      bench: `18개교 중앙값 ${B.op.med} (하위 25% ${B.op.q1}) · ${peerLbl} 중앙값 ${B.opPeer.med}`,
-      why: '2·3학년에 실제 운영된 과목 수. 역추산에서 수시 합격률과 가장 강하게 함께 움직인 축입니다(ρ=+0.70).',
+    /* ── 학교 구조 요인 (일반전형 기준) ── */
+    add({ owner: '학교', item: star('n23') + '운영 과목 폭', eval: '학업태도 · 교육환경 맥락', level: tier(me.op, B.op), value: me.op,
+      bench: qtxt(B.op) + ` · 18개교 중앙값 ${B.opAll.med}`,
+      why: `2·3학년에 실제 운영된 과목 수. ${peerLbl}에서 일반전형 합격률과의 순위상관 ρ=${rho('n23')}.`,
       fix: ['학교에 없는 과목은 공동교육과정·온라인학교로 이수 (서울대는 공동교육과정 이수 과목 인정)', 'STEP 5에서 “직접 추가”로 설계에 넣어 이수 경로를 확정'] });
-    add({ owner: '학교', item: '고급·심화 수학·과학 운영', eval: '학업태도(도전) · 정성평가(이수자 수)', level: tier(me.adv, B.adv), value: me.adv,
-      bench: `18개교 중앙값 ${B.adv.med} (하위 25% ${B.adv.q1})`,
-      why: '고급 과목·심화 수학·AP 등 운영 수. 고급 수학 계열은 수시 합격률과 ρ=+0.76.',
+    add({ owner: '학교', item: star('advMath') + '고급·심화 수학·과학 운영', eval: '학업태도(도전) · 정성평가(이수자 수)', level: tier(me.adv, B.adv), value: me.adv,
+      bench: qtxt(B.adv),
+      why: `고급 과목·심화 수학·AP 등 운영 수. ${peerLbl}에서 고급·심화 수학과 일반전형 ρ=${rho('advMath')}.`,
       fix: ['공동교육과정의 고급 수학·고급 과학 수강', '정규 과목 안에서 한 단계 심화한 탐구를 세특에 남기기 (STEP 5 주제 카드)'] });
-    add({ owner: '학교', item: '2022 개정 편제의 탐구 교과 폭', eval: '교육환경 맥락', level: tier(me.explore, B.ex), value: me.explore,
-      bench: `18개교(2026 입학생 편제) 중앙값 ${B.ex.med}`,
+    /* 상위권 학업 두께 — 일반고에서 일반전형과 가장 크게 관련된 축 */
+    let tl = tier(me.g1A, B.g1A);
+    add({ owner: '학교', item: star('g1A') + '상위권 학업 두께 (1학년 공통과목 A비율)', eval: '학업역량 · 학생 풀', level: tl === 'good' ? 'good' : tl === 'none' ? 'none' : (tl === 'bad' ? 'warn' : 'neutral'), value: me.g1A != null ? me.g1A + '%' : null,
+      bench: qtxt(B.g1A).replace(/(\d)(\s|\))/g, '$1%$2'),
+      why: (isIlban ? `일반고 9개교에서 일반전형과 가장 크게 관련된 축입니다(ρ=${rho('g1A')}). ` : `자사고군에서는 관계가 약합니다(ρ=${rho('g1A')}). `) +
+        '전원이 같은 과목을 듣는 1학년에서 A를 받는 학생이 얼마나 많은지, 즉 교내 상위권 층의 두께입니다. 학생 개인이 바꿀 수 없는 학교 조건이라 “불리”가 아니라 “주의”로 둡니다.',
+      fix: tl === 'bad' || tl === 'warn' ? ['교내 상위권이 얇은 학교일수록 지역균형 추천권 확보가 현실적인 1순위 통로', '일반전형을 함께 노린다면 학업역량 근거(원점수·세특의 학업 수행 내용)를 교내 최상위 수준으로 준비'] : [] });
+    add({ owner: '학교', item: star('plan23') + '2022 개정 편제의 탐구 교과 폭', eval: '교육환경 맥락', level: tier(me.explore, B.ex), value: me.explore,
+      bench: qtxt(B.ex) + ' (2026 입학생 편제)',
       why: '과학·사회·제2외국어/한문 선택 과목 수. 2025 입학생부터 해당되는 편제 기준입니다.',
       fix: ['부족한 교과군은 공동교육과정 목록에서 먼저 확인'] });
-    add({ owner: '학교', item: '고급·전문·실험·과제연구 편제', eval: '학업태도 · 교육환경 맥락', level: tier(me.pro.length, B.pro), value: me.pro.length,
-      bench: `18개교 중앙값 ${B.pro.med}` + (me.pro.length ? ` · 내 학교: ${me.pro.slice(0, 5).join(', ')}${me.pro.length > 5 ? ' 등' : ''}` : ''),
-      why: '2028 이후 편제 격차가 줄면 이 축에서 차이가 남습니다.',
+    add({ owner: '학교', item: star('planPro') + '고급·전문·실험·과제연구 편제', eval: '학업태도 · 교육환경 맥락', level: tier(me.pro.length, B.pro), value: me.pro.length,
+      bench: qtxt(B.pro) + (me.pro.length ? ` · 내 학교: ${me.pro.slice(0, 5).join(', ')}${me.pro.length > 5 ? ' 등' : ''}` : ''),
+      why: isIlban ? '일반고 9개교에서 2026 편제의 심화 과목 수는 일반전형 합격 인원과 ρ=+0.76으로 함께 움직였습니다(연도가 달라 참고용).' : '2028 이후 편제 격차가 줄면 이 축에서 차이가 남습니다.',
       fix: ['R&E·과제연구형 공동교육과정, 대학 연계 프로그램 활용'] });
-    /* 성적 구조 — 불리보다는 '해석'의 문제 */
+    /* 성적 분포 구조 — 불리보다는 '해석'의 문제 */
     let gl = 'none', gw = '학교알리미 과목별 성취 자료가 없어 판단하지 않습니다.', gf = [];
     if (me.g2A != null) {
-      if (me.g2A >= B.g2A.q3) { gl = 'warn'; gw = `A비율이 높은 편(${me.g2A}%)이라 A 자체로는 변별이 약합니다. 18개교에서 A비율은 합격률과 관계가 없었습니다(ρ=+0.29).`; gf = ['원점수·과목 평균 대비 위치와 세특의 학업 수행 내용으로 차별화', '난도 높은 선택과목을 피하지 않기']; }
+      if (me.g2A >= B.g2A.q3) { gl = 'warn'; gw = `2학년 A비율이 높은 편(${me.g2A}%)이라 A 자체로는 변별이 약합니다. 18개교에서 2학년 A비율은 일반전형과 관계가 없었습니다(ρ=+0.31, 원점수 평균 통제 시 +0.04).`; gf = ['원점수·과목 평균 대비 위치와 세특의 학업 수행 내용으로 차별화', '난도 높은 선택과목을 피하지 않기']; }
       else if ((me.g2Avg != null && me.g2Avg < B.g2Avg.q1) || me.g2A < B.g2A.q1) { gl = 'neutral'; gw = `A비율 ${me.g2A}% · 평균 ${me.g2Avg}점으로 성적을 엄격하게 주는 학교입니다. 서울대는 평균·분포와 함께 정성평가하므로 등급만으로 크게 불리하지 않습니다. 다만 교과 정량 반영이 큰 다른 대학·전형에서는 불리할 수 있습니다.`; gf = ['대학별로 지원 전략을 나누기 (서울대 종합 ↔ 교과 정량 대학)']; }
-      else { gl = 'neutral'; gw = `A비율 ${me.g2A}% · 평균 ${me.g2Avg}점으로 18개교 범위 안입니다.`; }
+      else { gl = 'neutral'; gw = `A비율 ${me.g2A}% · 평균 ${me.g2Avg}점으로 비교 범위 안입니다.`; }
     }
     add({ owner: '학교', item: '성적 분포 구조', eval: '학업역량 (주어진 여건에서의 성취)', level: gl, value: me.g2A != null ? `A ${me.g2A}% · 평균 ${me.g2Avg}` : null,
-      bench: `18개교 A비율 중앙값 ${B.g2A.med}% · 평균 중앙값 ${B.g2Avg.med}점 (2학년 핵심과목)`, why: gw, fix: gf });
+      bench: `18개교 2학년 A비율 중앙값 ${B.g2A.med}% · ${peerLbl} 평균 중앙값 ${B.g2Avg.med}점`, why: gw, fix: gf });
     /* 전형 통로 */
-    add(isIlban
+    add(jigyunOK
       ? { owner: '학교', item: '전형 통로', eval: '전형 구조', level: 'good', value: '지역균형 가능', bench: '2027 추천 2명 → 2028 3명·수능최저 폐지(발표 기준)',
-          why: '일반고 9개교 수시 인원의 바닥을 지역균형이 받칩니다.', fix: ['교내 추천 기준(학업·학생부 충실도)을 조기에 확인'] }
+          why: '지역균형(학교당 최대 2명 합격)이 수시의 바닥을 받칩니다. 일반고 9개교는 수시 5~12명 중 약 2명이 지균, 나머지가 일반전형으로 추정됩니다.', fix: ['교내 추천 기준(학업·학생부 충실도)을 조기에 확인', '추천권 밖이라면 일반전형 기준(서류 100%, 2배수)으로 설계'] }
       : { owner: '학교', item: '전형 통로', eval: '전형 구조', level: 'warn', value: '2028 지역균형 불가', bench: '자사고·외고·국제고·과학고·영재학교는 2028부터 지역균형 지원 불가(발표 기준)',
           why: '일반전형(서류 1단계 2배수)만 남아, 학생부의 교육과정 깊이가 더 중요해집니다.', fix: ['일반전형 기준으로 학업태도·전공 심화 근거를 집중 설계'] });
 
@@ -464,7 +505,7 @@
     const rank = o => (o.level === 'bad' ? 0 : o.level === 'warn' ? 10 : 99) + (o.owner === '학생 선택' ? 0 : o.owner === '학교' ? 1 : 2);
     const todo = items.filter(o => (o.level === 'bad' || o.level === 'warn') && o.fix.length).sort((a, b) => rank(a) - rank(b));
     const selfIn = D.schools.find(z => nz(sc.name).replace(/(고등학교|\(.*\))/g, '').replace(/고$/, '') === z.name.replace(/고$/, ''));
-    return { me, items, todo, peerLbl, isIlban, selfIn };
+    return { me, items, todo, peerLbl, isIlban, selfIn, keyAxes: KEY };
   }
 
   function diagNode(S, forPrint) {
@@ -490,7 +531,7 @@
       wrap.appendChild(ol);
     }
     if (r.selfIn) wrap.appendChild(el('p', { class: 'note', html: `※ 내 학교(${esc(r.selfIn.name)})는 비교 기준 18개교에 포함되어 있습니다. 분포에 자기 값이 섞여 있다는 점을 감안하세요.` }));
-    wrap.appendChild(el('p', { class: 'note', style: 'margin-top:10px', html: `기준: 서울대 수시 다수 배출 18개교(${esc(r.peerLbl)} 포함)의 분포. 하위 25% 미만 = 불리, 중앙값 미만 = 주의, 상위 25% 이상 = 강점. 학교 지표는 학교알리미 공시·편제표 기준이며 공시 연도가 18개교와 다를 수 있습니다. <b>합격 가능성 예측이 아닙니다.</b>` }));
+    wrap.appendChild(el('p', { class: 'note', style: 'margin-top:10px', html: `기준: 서울대 수시 다수 배출 18개교 중 <b>같은 유형(${esc(r.peerLbl)})</b>의 분포, 목표 전형은 <b>일반전형</b>(합격 인원 = 수시 − 지균 최대 2명 추정). ★는 이 유형에서 일반전형 합격률과 가장 크게 관련된 축입니다. 하위 25% 미만 = 불리, 중앙값 미만 = 주의, 상위 25% 이상 = 강점. 학교 지표는 학교알리미 공시·편제표 기준이며 공시 연도가 18개교와 다를 수 있습니다. <b>합격 가능성 예측이 아닙니다.</b>` }));
     return wrap;
   }
 

@@ -426,3 +426,13 @@ body.light{ --snu-ja:#2f6bd6; --snu-il:#c2760a; }
 .snu-report h2{font-size:17px;margin-bottom:10px}
 @media(max-width:640px){.snu-tiles{grid-template-columns:repeat(2,1fr)}}
 @media print{.snu-dtbl{min-width:0}}
+.snu-type{min-width:760px} .snu-cg{min-width:640px}
+.hbar{position:relative;display:flex;align-items:center;gap:8px;min-width:200px}
+.hbar i{display:block;height:14px;border-radius:0 4px 4px 0;min-width:2px}
+.hbar i.g-ja{background:var(--snu-ja)} .hbar i.g-il{background:var(--snu-il)}
+.hbar span{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dbar{position:relative;height:10px;background:var(--chip);border-radius:3px;min-width:160px}
+.dbar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--sub)}
+.dbar i{position:absolute;top:0;bottom:0;border-radius:2px}
+.dbar i.pos{background:var(--accent)} .dbar i.neg{background:var(--sub)}
+.dval{font-size:12px;margin-top:3px;font-variant-numeric:tabular-nums}

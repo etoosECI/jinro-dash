@@ -408,3 +408,21 @@ body.light{ --snu-ja:#2f6bd6; --snu-il:#c2760a; }
 .snu-fw td:first-child,.snu-rec td:first-child{white-space:nowrap}
 .snu-detail .cmp td:first-child{min-width:150px;width:44%}
 .snu-detail .cmp td{padding:8px 6px}
+/* 불리 요인 진단 */
+.snu-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:6px}
+.snu-tile{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.snu-tile .n{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.snu-tile .l{font-size:12px;color:var(--sub);font-weight:700}
+.snu-tile.lv-bad{border-top:3px solid var(--bad)} .snu-tile.lv-warn{border-top:3px solid var(--warn)}
+.snu-tile.lv-good{border-top:3px solid var(--ok)} .snu-tile.lv-none{border-top:3px dashed var(--line)}
+.lvb{display:inline-block;white-space:nowrap;font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px;border:1px solid var(--line);color:var(--sub)}
+.lvb.lv-bad{border-color:var(--bad);color:var(--bad)} .lvb.lv-warn{border-color:var(--warn);color:var(--warn)}
+.lvb.lv-good{border-color:var(--ok);color:var(--ok)} .lvb.lv-none{border-style:dashed}
+.snu-h4{font-size:13.5px;margin:16px 0 4px}
+.snu-dtbl{min-width:720px} .snu-dtbl td:nth-child(2){min-width:190px}
+.snu-todo{margin:6px 0 0 18px;font-size:13.5px} .snu-todo>li{margin:10px 0}
+.snu-todo ul{list-style:none;margin:4px 0 0 4px;color:var(--sub);font-size:13px}
+.snu-report{margin-top:22px;page-break-inside:auto}
+.snu-report h2{font-size:17px;margin-bottom:10px}
+@media(max-width:640px){.snu-tiles{grid-template-columns:repeat(2,1fr)}}
+@media print{.snu-dtbl{min-width:0}}

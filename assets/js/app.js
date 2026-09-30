@@ -1744,6 +1744,11 @@
       '도서·논문은 검색으로 실재를 확인한 항목만 수록했습니다.<br>' +
       '<b>이 출력물에는 학생의 학습 이력이 담겨 있습니다.</b> 인쇄물 보관과 공유에 주의해 주세요.' }));
 
+    /* 서울대 기준 불리 요인·보강 (snu.js) — 면책 문구 앞에 끼운다 */
+    if (window.SnuAnalysis) {
+      const disc = r.lastElementChild;
+      SnuAnalysis.reportSection(S).then(n => { if (n && r.contains(disc)) r.insertBefore(n, disc); });
+    }
     renderHistory();
   }
 

@@ -27,7 +27,7 @@
   };
 
   // 진단(record)을 계열보다 앞에 둔다 — 보완점이 이후 설계에 반영되도록
-  const STEP_ORDER = ['start', 'school', 'record', 'major', 'design', 'report'];
+  const STEP_ORDER = ['start', 'school', 'record', 'major', 'design', 'report', 'snu'];
 
   /* ---------------- 테마 ---------------- */
   function setTheme(t) {
@@ -46,6 +46,7 @@
       case 'major': return !!S.school;
       case 'design': return !!S.major;
       case 'report': return !!S.school;
+      case 'snu': return true;   // 분석 화면은 학교를 고르지 않아도 열린다
       default: return false;
     }
   }
@@ -64,6 +65,7 @@
     STEP_ORDER.forEach(s => { const n = $('#p-' + s); if (n) n.hidden = s !== step; });
     refreshSteps();
     if (step === 'report') renderReport();
+    if (step === 'snu' && window.SnuAnalysis) window.SnuAnalysis.render(S);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 

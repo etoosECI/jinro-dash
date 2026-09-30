@@ -361,3 +361,50 @@ header{position:relative}
 .ec-report .ec-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .ec-report ul{margin:4px 0 0;padding-left:18px}
 @media (max-width:720px){.ec-report .ec-cols{grid-template-columns:1fr}.ec-link{position:static;display:inline-block;margin-top:8px}}
+
+/* ===== ⑦ 서울대 배출 격차 분석 (snu.js) ===== */
+:root{ --snu-ja:#4f8cff; --snu-il:#c97a0c; }
+body.light{ --snu-ja:#2f6bd6; --snu-il:#c2760a; }
+.snu-find{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.snu-fcard{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:14px}
+.snu-fcard h4{font-size:14.5px;margin-bottom:6px}
+.snu-fcard p{font-size:13px;color:var(--sub);line-height:1.7}
+.snu-scroll{overflow-x:auto}
+.snu-fw td{font-size:12.5px}
+.snu-q{color:var(--sub);font-style:italic;min-width:220px}
+.snu-chart{position:relative;margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.snu-svg{width:100%;height:auto;display:block}
+.snu-svg .grid{stroke:var(--line);stroke-width:1}
+.snu-svg .axis{stroke:var(--sub);stroke-width:1}
+.snu-svg .tick{fill:var(--sub);font-size:11px}
+.snu-svg .axl{fill:var(--sub);font-size:11.5px;font-weight:600}
+.snu-svg .plab{fill:var(--txt);font-size:11.5px;font-weight:600;paint-order:stroke;stroke:var(--panel2);stroke-width:3px}
+.mk{stroke:var(--panel2);stroke-width:2}
+.mk.g-ja{fill:var(--snu-ja)} .mk.g-il{fill:var(--snu-il)}
+.mk.on{stroke:var(--txt);stroke-width:2.5}
+.snu-svg .hit{fill:transparent;cursor:pointer}
+.snu-svg .pt:focus{outline:none} .snu-svg .pt:focus .mk{stroke:var(--txt)}
+.snu-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12px;color:var(--sub);margin-bottom:6px}
+.snu-legend span{display:inline-flex;align-items:center;gap:5px}
+.snu-legend svg .mk{stroke:none}
+.snu-rho{margin-left:auto;color:var(--txt)}
+.snu-tip{position:absolute;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.6;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.25);min-width:180px}
+.snu-tbl th{cursor:pointer;white-space:nowrap} .snu-tbl th.num{text-align:center}
+.snu-row{cursor:pointer} .snu-row:hover td{background:var(--panel2)} .snu-row.on td{background:var(--chip)}
+.snu-detail h3{font-size:17px}
+.snu-read{font-size:13.5px;line-height:1.8}
+.ybars{display:flex;gap:10px;align-items:flex-end;height:140px;padding-top:6px}
+.yb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.ystack{display:flex;flex-direction:column;justify-content:flex-end;width:28px}
+.ystack .ys{background:var(--snu-ja);border-radius:0}
+.ystack .yj{background:var(--line);border-radius:4px 4px 0 0;margin-bottom:2px}
+.yv{font-size:12px;font-weight:700;margin-top:4px} .yv span{color:var(--sub);font-weight:500}
+.yv.none{color:var(--sub)}
+.yl{font-size:11px;color:var(--sub)}
+.lg-s,.lg-j{display:inline-block;width:10px;height:10px;border-radius:2px}
+.lg-s{background:var(--snu-ja)} .lg-j{background:var(--line)}
+@media(max-width:640px){ .snu-rho{margin-left:0} .snu-find{grid-template-columns:1fr} }
+.snu-fw{min-width:760px} .snu-tbl{min-width:940px}
+.snu-fw td:first-child,.snu-rec td:first-child{white-space:nowrap}
+.snu-detail .cmp td:first-child{min-width:150px;width:44%}
+.snu-detail .cmp td{padding:8px 6px}

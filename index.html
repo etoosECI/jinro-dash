@@ -33,6 +33,7 @@
     <button data-step="major">④ 희망 계열·학과</button>
     <button data-step="design">⑤ 과목·탐구 설계</button>
     <button data-step="report">⑥ 리포트</button>
+    <button data-step="snu">⑦ 서울대 배출 분석</button>
   </nav>
 
   <!-- ① 시작 : 가명 ID · 진입 학년 -->
@@ -238,6 +239,12 @@
     </div>
   </section>
 
+  <!-- ⑦ 서울대 배출 격차 분석 (학교 선택 없이도 열림) -->
+  <section class="panel card" id="p-snu" hidden>
+    <div class="sec-title">STEP 7 · 서울대 수시 배출 격차 — 서류평가 기준 역추산</div>
+    <div id="snuBody"></div>
+  </section>
+
   <footer>
     <p>본 대시보드는 학생의 자기주도적 진로설계를 돕기 위한 <b>참고용 자료</b>입니다. 합격 여부를 보장하거나 예측하지 않습니다.</p>
     <p class="noprint">교과 편제·학업성취는 학교 교육과정 편제표 및 학교알리미 공시자료 기준 · 도서/논문은 검색으로 실재를 확인한 항목만 수록</p>
@@ -262,6 +269,7 @@
 <script src="assets/js/store.js"></script>
 <script src="assets/js/record.js"></script>
 <script src="assets/js/bridge.js"></script>
+<script src="assets/js/snu.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

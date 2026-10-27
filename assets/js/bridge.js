@@ -34,6 +34,46 @@
     return out.join('\n');
   }
 
+  /* 현재 설계를 들고 정밀분석 보드로 넘어가는 주소.
+     Expert-Course hakjong.html이 ?jinro=<가명ID>를 읽어 학교·과정·학과를 자동으로 연결한다. */
+  const profileKey = () => {
+    const h = host();
+    return (h && h.S.profile && h.S.profile.studentKey) || '';
+  };
+  function handoffUrl() {
+    const k = profileKey();
+    return k ? `${EC}hakjong.html?jinro=${encodeURIComponent(k)}` : `${EC}hakjong.html`;
+  }
+  /* 넘기기 전에 반드시 저장한다 — 저장이 안 돼 있으면 정밀분석 쪽에서 설계를 못 찾는다 */
+  function handoff() {
+    const h = host();
+    if (!h || !profileKey()) {
+      banner('warn', '먼저 ① 시작에서 가명 ID를 입력해 주세요.', '정밀분석 보드는 저장된 설계를 가명 ID로 찾습니다.');
+      return;
+    }
+    h.persist('Expert-Course', '학생부 정밀분석으로 넘김');
+    const S = h.S;
+    const what = [S.school && S.school.name, S.track && S.track.label,
+                  S.program ? S.program.name : (S.major && S.major.name)].filter(Boolean).join(' · ');
+    banner('info', '학생부 정밀분석 보드로 넘깁니다.', what
+      ? `${what} — 정밀분석 M4(교육과정)에 이 학교 편제와 학과 핵심·권장 과목이 채워집니다.`
+      : '정밀분석 보드에서 이 설계를 선택해 연결하세요.');
+    global.open(handoffUrl(), '_blank', 'noopener');
+  }
+
+  /* 넘기기 버튼 — 생기부 진단 화면과 설계 화면 양쪽에 같은 모양으로 단다 */
+  function handoffRow() {
+    const k = profileKey();
+    return `<div class="row" style="margin-top:10px;align-items:center;gap:8px">
+      <button class="btn sm" id="ecHandoff" type="button">학생부 정밀분석으로 넘기기 ↗</button>
+      <span class="note">${k ? `가명 ID <b>${esc(k)}</b>로 저장한 뒤 정밀분석 보드를 엽니다. 학교 편제·선택 학과가 함께 넘어갑니다.`
+                            : '① 시작에서 가명 ID를 입력하면 활성화됩니다.'}</span></div>`;
+  }
+  function bindHandoff(root) {
+    const b = root && root.querySelector('#ecHandoff');
+    if (b) b.onclick = handoff;
+  }
+
   /* ① STEP 3 생기부 진단 — Expert-Course 정밀분석 원문 가져오기 */
   function mountRecordImport() {
     const box = document.getElementById('uploadBox');
@@ -47,7 +87,9 @@
         <div class="row" style="margin-top:8px;align-items:flex-end"><div class="fld"><label for="ecAnaSel">정밀분석 기록</label>
         <select id="ecAnaSel"><option value="">${list.length ? '선택하세요' : '이 브라우저에 저장된 정밀분석이 없습니다'}</option>${list.map(r => `<option value="${r.number}">${pad(r.number)}번 · ${esc(r.record.student && r.record.student.name || '학생')} · 원문 ${r.record.sections.length}개 영역</option>`).join('')}</select></div>
         <button class="btn sm ghost" id="ecAnaBtn" type="button" ${list.length ? '' : 'disabled'}>원문 가져오기</button>
-        <a class="btn sm ghost" href="${EC}hakjong.html" target="_blank" rel="noopener">정밀분석 보드 열기 ↗</a></div>`;
+        <a class="btn sm ghost" href="${EC}hakjong.html" target="_blank" rel="noopener">정밀분석 보드 열기 ↗</a></div>
+        ${handoffRow()}`;
+      bindHandoff(wrap);
       wrap.querySelector('#ecAnaBtn').onclick = () => {
         const n = Number(wrap.querySelector('#ecAnaSel').value), row = ecAnalyses().find(r => r.number === n);
         if (!row) return;
@@ -59,6 +101,30 @@
     };
     draw();
     wrap.addEventListener('focusin', e => { if (e.target.id === 'ecAnaSel' && !e.target.dataset.fresh) { e.target.dataset.fresh = '1'; draw(); } });
+  }
+
+  /* ①-2 STEP 5 과목·탐구 설계 — 설계를 마친 뒤 정밀분석으로 넘기기 */
+  function mountDesignHandoff() {
+    const gen = document.getElementById('genDesign');
+    if (!gen) return;
+    const anchor = gen.closest('.btnrow') || gen.parentNode;
+    let wrap = document.getElementById('ecDesignHandoff');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'ecDesignHandoff'; wrap.className = 'ec-bridge';
+      anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+    }
+    wrap.innerHTML = `<b>Expert-Course 연결</b> <span class="note">여기까지의 학교 편제·계열·학과를 학생부 정밀분석으로 넘깁니다.</span>${handoffRow()}`;
+    bindHandoff(wrap);
+  }
+
+  /* 화면을 옮길 때마다 가명 ID 상태를 다시 반영한다 */
+  function onStep(S, step) {
+    if (step === 'record') mountRecordImport();
+    if (step === 'design' || step === 'major') mountDesignHandoff();
+    [document.getElementById('ecImport'), document.getElementById('ecDesignHandoff')]
+      .forEach(w => { if (w) { const n = w.querySelector('#ecHandoff'); if (n) bindHandoff(w); } });
+    mountHeaderLink(true);
   }
 
   /* ② STEP 5 (3학년 진입) — Expert-Course 성적에서 2학년 이수과목 체크 */
@@ -93,7 +159,7 @@
     const sec = document.createElement('div'); sec.className = 'ec-report';
     const open = n => `${EC}hakjong.html?open=${n}`;
     if (!linked.length) {
-      sec.innerHTML = `<h2>Expert-Course 학생부 정밀분석</h2><p class="note noprint">이 설계와 연결된 정밀분석이 없습니다. <a href="${EC}hakjong.html?jinro=${encodeURIComponent(key)}" target="_blank" rel="noopener">정밀분석 보드에서 이 설계와 연결해 시작하기 ↗</a></p>`;
+      sec.innerHTML = `<h2>Expert-Course 학생부 정밀분석</h2><p class="note noprint">이 설계와 연결된 정밀분석이 없습니다. <a href="${EC}hakjong.html?jinro=${encodeURIComponent(key)}" target="_blank" rel="noopener">이 설계를 들고 정밀분석 시작하기 ↗</a><br>학교 편제와 ${esc(S.program ? S.program.name : (S.major ? S.major.name : '계열'))} 핵심·권장 과목이 정밀분석 M4(교육과정)에 자동으로 채워집니다.</p>`;
       sec.classList.add('noprint');
     } else {
       sec.innerHTML = `<h2>Expert-Course 학생부 정밀분석</h2>` + linked.map(x => {
@@ -106,15 +172,24 @@
   }
 
   /* ④ 머리글 링크 */
-  function mountHeaderLink() {
-    const h = document.querySelector('header'); if (!h || document.getElementById('ecLink')) return;
-    const a = document.createElement('a'); a.id = 'ecLink'; a.className = 'ec-link noprint'; a.target = '_blank'; a.rel = 'noopener';
-    a.textContent = 'Expert-Course ↗'; a.title = '입시 전문가 과정 실습 도구 (상담 진단실·학생부 정밀분석)';
-    a.href = EC; a.onclick = () => { const k = host() && host().S.profile && host().S.profile.studentKey; a.href = k ? `${EC}hakjong.html?jinro=${encodeURIComponent(k)}` : EC; };
-    h.appendChild(a);
+  function mountHeaderLink(refreshOnly) {
+    const h = document.querySelector('header'); if (!h) return;
+    let a = document.getElementById('ecLink');
+    if (!a) {
+      if (refreshOnly) return;
+      a = document.createElement('a'); a.id = 'ecLink'; a.className = 'ec-link noprint';
+      a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = 'Expert-Course ↗';
+      h.appendChild(a);
+    }
+    /* onclick에서 href를 바꾸면 브라우저에 따라 바뀌기 전 주소로 열린다.
+       화면이 바뀔 때마다 미리 넣어 둔다. */
+    const k = profileKey();
+    a.href = k ? handoffUrl() : EC;
+    a.title = k ? `'${k}' 설계를 학생부 정밀분석으로 넘깁니다` : '입시 전문가 과정 실습 도구 (상담 진단실·학생부 정밀분석)';
   }
 
-  function init() { mountHeaderLink(); mountRecordImport(); }
+  function init() { mountHeaderLink(); mountRecordImport(); mountDesignHandoff(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  global.JinroBridge = { onBuilder, onReport, composeText };
+  global.JinroBridge = { onBuilder, onReport, onStep, composeText, handoffUrl };
 })(window);

@@ -305,22 +305,46 @@
   }
 
   /* ---------- 6) PDF 텍스트 추출 (pdf.js 지연 로드) ---------- */
+  /* 저장소에 포함한 사본을 먼저 쓰고, 없을 때만 CDN으로 넘어간다.
+     학교·학원 망에서 cdnjs가 막혀 PDF 업로드가 통째로 안 되던 문제가 있었다. */
+  const PDF_SOURCES = [
+    { lib: 'assets/vendor/pdfjs/pdf.min.js', worker: 'assets/vendor/pdfjs/pdf.worker.min.js', label: '저장소 사본' },
+    { lib: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+      worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', label: 'CDN' },
+  ];
+  const BASE = (function () {
+    const p = location.pathname;
+    return p.endsWith('/') ? p : p.slice(0, p.lastIndexOf('/') + 1);
+  })();
+  const abs = u => /^https?:/.test(u) ? u : BASE + u;
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(src + ' 를 불러오지 못했습니다'));
+      document.head.appendChild(s);
+    });
+  }
+
   let pdfjsPromise = null;
   function loadPdfJs() {
     if (pdfjsPromise) return pdfjsPromise;
-    pdfjsPromise = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload = () => {
+    pdfjsPromise = (async () => {
+      const tried = [];
+      for (const src of PDF_SOURCES) {
         try {
-          global.pdfjsLib.GlobalWorkerOptions.workerSrc =
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-          resolve(global.pdfjsLib);
-        } catch (e) { reject(e); }
-      };
-      s.onerror = () => reject(new Error('pdf.js를 불러오지 못했습니다'));
-      document.head.appendChild(s);
-    });
+          await loadScript(abs(src.lib));
+          if (!global.pdfjsLib) throw new Error('pdfjsLib 전역이 만들어지지 않았습니다');
+          global.pdfjsLib.GlobalWorkerOptions.workerSrc = abs(src.worker);
+          return global.pdfjsLib;
+        } catch (e) { tried.push(`${src.label}: ${e.message}`); }
+      }
+      throw new Error('PDF 판독기를 불러오지 못했습니다 (' + tried.join(' / ') +
+        '). assets/vendor/pdfjs 폴더가 함께 업로드됐는지 확인해 주세요. 그동안은 생기부 내용을 복사해 아래에 붙여넣으시면 똑같이 진단됩니다.');
+    })();
+    pdfjsPromise.catch(() => { pdfjsPromise = null; });   // 실패는 캐시하지 않는다
     return pdfjsPromise;
   }
 
@@ -328,12 +352,23 @@
     if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') {
       const pdfjsLib = await loadPdfJs();
       const buf = await file.arrayBuffer();
-      const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+      let doc;
+      try {
+        doc = await pdfjsLib.getDocument({ data: buf }).promise;
+      } catch (e) {
+        if (/password/i.test(e.message || '')) {
+          throw new Error('암호가 걸린 PDF입니다. 암호를 풀어 저장한 뒤 다시 올려 주세요.');
+        }
+        throw new Error('PDF를 여는 데 실패했습니다: ' + (e.message || '알 수 없는 오류'));
+      }
       let text = '';
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
         const c = await page.getTextContent();
         text += c.items.map(it => it.str).join(' ') + '\n';
+      }
+      if (text.replace(/\s/g, '').length < 30) {
+        throw new Error(`${doc.numPages}쪽을 모두 읽었지만 글자가 거의 없습니다. 스캔하거나 사진으로 만든 PDF는 글자가 아니라 이미지라서 내용을 뽑을 수 없습니다. 나이스에서 받은 "조회·출력용 PDF"를 쓰거나, 생기부 내용을 복사해 아래에 붙여넣어 주세요.`);
       }
       return text;
     }

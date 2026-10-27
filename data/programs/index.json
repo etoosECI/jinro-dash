@@ -182,6 +182,15 @@
       "ownTopicCount": 2
     },
     {
+      "programId": "trade",
+      "name": "무역학과",
+      "majorId": "soc",
+      "field": "상경계열",
+      "path": "programs/trade.json",
+      "topicCount": 17,
+      "ownTopicCount": 5
+    },
+    {
       "programId": "politics",
       "name": "정치외교학과",
       "majorId": "soc",

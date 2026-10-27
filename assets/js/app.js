@@ -70,6 +70,11 @@
   }
 
   /* ---------------- 저장 ---------------- */
+  /* 저장 목록(①의 '이어하기' 드롭다운)을 다시 그리는 함수 — initStart에서 채워 넣는다.
+     예전에는 페이지를 새로 고치기 전까지 방금 만든 ID가 목록에 안 보여서
+     "저장이 안 된다"처럼 보였다. */
+  let refreshProfileList = null;
+
   function persist(step, detail) {
     if (!S.profile) return;
     S.profile.chosenSubjects = [...S.selected];
@@ -78,7 +83,8 @@
     S.profile.programId = S.program ? S.program.programId : null;
     S.profile.topicIdx = S.topicIdx;
     if (step) Store.log(S.profile, step, detail);
-    Store.save(S.profile);
+    const ok = Store.save(S.profile);
+    if (ok && refreshProfileList) refreshProfileList(S.profile.studentKey);
     renderHistory();
   }
 
@@ -89,14 +95,17 @@
     const idInput = $('#idInput'), sel = $('#profileSel');
     idInput.value = Store.lastUsed() || Store.newId();
 
-    function refreshList() {
+    function refreshList(selectId) {
+      const keep = selectId || sel.value;
       sel.innerHTML = '<option value="">— 없음 —</option>';
       Store.list().forEach(id => {
         const p = Store.get(id);
         sel.appendChild(el('option', { value: id, text: `${id} · ${p.schoolName || '학교 미선택'} · ${p.updatedAt || ''}` }));
       });
+      if (keep && Store.exists(keep)) sel.value = keep;
     }
     refreshList();
+    refreshProfileList = refreshList;      // 저장할 때마다 목록을 다시 그린다
 
     $('#newIdBtn').onclick = () => { idInput.value = Store.newId(); };
     $('#loadBtn').onclick = async () => {
@@ -142,8 +151,15 @@
         S.selected = new Set(S.profile.chosenSubjects || []);
         S.taken = new Set(S.profile.takenSubjects || []);
       }
+      /* 실명으로 보이면 막지는 않되, 어디에 남는지 한 번 알려 준다 (미성년 개인정보 최소 보관 원칙) */
+      if (/^[가-힣]{2,4}$/.test(id)) {
+        banner('warn', `'${id}'은(는) 실명처럼 보입니다.`,
+          '이 값은 이 브라우저에만 저장되고 서버로 전송되지 않지만, 공용 PC라면 이니셜이나 별칭(예: 유ㅎㅈ-2027)을 권합니다. 그대로 진행합니다.');
+      }
       S.profile.entryGrade = S.entryGrade;
       persist('시작', `가명 ID ${id} · ${S.profile.entryGrade}학년 진입`);
+      banner('info', `'${id}'(으)로 저장했습니다.`,
+        '①의 "저장된 설계 이어하기"에서 언제든 다시 불러올 수 있습니다.', { replaceKey: 'profile-saved' });
       go('school');
     };
   }
@@ -1395,7 +1411,9 @@
     };
 
     const drop = $('#drop'), file = $('#fileInput');
-    drop.onclick = () => file.click();
+    /* file.click()이 만든 클릭이 다시 드롭존으로 올라와 자기 자신을 또 부르면
+       브라우저에 따라 파일 창이 안 열린다. 입력칸에서 올라온 클릭은 무시한다. */
+    drop.onclick = e => { if (e.target !== file) file.click(); };
     drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); } };
     ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hot'); }));
     ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('hot'); }));
@@ -1780,9 +1798,17 @@
   global_expose();
   function global_expose() {
     window.JinroHost = { S, go, persist, renderBuilder: () => renderBuilder(), banner };
-    const rb = renderBuilder, rr = renderReport;
+    const rb = renderBuilder, rr = renderReport, g = go;
     renderBuilder = function () { rb.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onBuilder(S); };
     renderReport = function () { rr.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onReport(S); };
+    /* 화면을 옮길 때마다 Expert-Course 연결 상태(가명 ID·학과)를 다시 반영한다 */
+    go = function (step) {
+      const r = g.apply(this, arguments);
+      if (window.JinroBridge && window.JinroBridge.onStep) {
+        try { window.JinroBridge.onStep(S, step); } catch (e) { console.warn('Expert-Course 연결 갱신 실패', e); }
+      }
+      return r;
+    };
   }
 
   async function boot() {

@@ -15,8 +15,14 @@ await p.click('#acList button'); await p.waitForTimeout(700);
 // 계열 성격에 반하는 과목 패턴
 const SCI = /물리|화학|생명과학|지구과학|역학|전자기|양자|세포|물질대사|행성|생물의 유전|고급 물리|고급 화학|지구시스템/;
 const HUMSOC = /문학|독서|언어|매체|화법|작문|역사|윤리|사상|지리|정치|법과|사회|경제|세계사|여행|국제 관계|도시의 미래/;
+const normSub = x => String(x||'').replace(/\s/g,'')
+  .replace(/[\u2160\u2161\u2162]/g, m => ({'\u2160':'I','\u2161':'II','\u2162':'III'}[m]))
+  .replace(/[\u00b7\u318d]/g,'').replace(/(진로|일반|공통|융합)?\uD83D\uDD0E?$/,'');
 const rows = [];
 for (const prog of idx.programs) {
+  /* index.json에는 과목 목록이 없으므로 학과 파일에서 읽어 온다 */
+  Object.assign(prog, JSON.parse(fs.readFileSync(
+    `/home/claude/jinro-dash/data/programs/${prog.programId}.json`,'utf8')));
   await p.click('#steps button[data-step="major"]'); await p.waitForTimeout(200);
   await p.click(`#fields .field[data-id="${prog.majorId}"]`); await p.waitForTimeout(350);
   const names = await p.locator('#progGrid .progcard:not(.soon) .m').allTextContents();
@@ -31,7 +37,12 @@ for (const prog of idx.programs) {
   await p.click('#genDesign'); await p.waitForTimeout(450);
   const cards = (await p.locator('#designOut .inq h4').allTextContents()).filter(t=>t.includes('🔬'));
   const isSciMajor = ['eng','nat'].includes(prog.majorId);
-  const wrong = sel.filter(s => isSciMajor ? (HUMSOC.test(s) && !SCI.test(s)) : SCI.test(s));
+  /* 학과가 자기 목록에 올려 둔 과목은 '어긋난 과목'이 아니다.
+     (예: 심리학과의 생명과학·세포와 물질대사는 의도한 권장 과목이다)
+     이 검사는 '목록 밖인데 계열 성격과도 어긋난 과목'만 잡는다. */
+  const own = new Set([...(prog.coreSubjects||[]), ...(prog.recommendedSubjects||[])].map(normSub));
+  const wrong = sel.filter(s => !own.has(normSub(s)) &&
+    (isSciMajor ? (HUMSOC.test(s) && !SCI.test(s)) : SCI.test(s)));
   rows.push({ name: prog.name, major: prog.majorId, sel: sel.length, cards: cards.length, wrong });
 }
 // 준비 중 카드 개수 (중복 확인)

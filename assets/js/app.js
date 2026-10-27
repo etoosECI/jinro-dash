@@ -1427,19 +1427,86 @@
   }
 
   async function handleFile(f) {
+    hideOcrBox();
     try {
       banner('info', `${f.name} 읽는 중…`, '');
       const text = await Record.readFile(f);
       $('#recText').value = Record.mask(text);
       banner('info', '파일을 읽었습니다.', '식별정보로 보이는 부분은 자동 마스킹했습니다. 남아 있는 이름·학번이 있으면 직접 지워 주세요.');
     } catch (e) {
+      if (e.needsOcr) { offerOcr(f, e); return; }
       banner('err', '파일을 읽지 못했습니다', e.message);
+    }
+  }
+
+  /* ---------- 스캔 PDF → OCR ----------
+     무겁고 오래 걸리는 작업이라 자동으로 돌리지 않고, 왜 필요한지 설명한 뒤 직접 누르게 한다. */
+  let ocrCancelled = false;
+  function hideOcrBox() { const b = $('#ocrBox'); if (b) { b.hidden = true; b.innerHTML = ''; } }
+
+  function offerOcr(file, err) {
+    const box = $('#ocrBox'); if (!box) { banner('err', '파일을 읽지 못했습니다', err.message); return; }
+    const pages = err.numPages || 0;
+    box.hidden = false;
+    box.innerHTML =
+      `<b>이 PDF에는 글자가 없습니다 ${pages ? `(${pages}쪽 전부)` : ''}</b>
+       <p class="note" style="margin-top:6px">스캔하거나 사진으로 만든 PDF는 안에 든 것이 글자가 아니라 <b>이미지</b>입니다.
+       그래서 복사·붙여넣기도 되지 않습니다. 이미지에서 글자를 읽어 내는 <b>OCR</b>로 처리할 수 있습니다.</p>
+       <p class="note">처리는 <b>이 브라우저 안에서만</b> 이루어지며 파일이 밖으로 나가지 않습니다.
+       ${pages ? `${pages}쪽이면 대략 ${Math.max(5, Math.round(pages * 2.5))}초 안팎 걸립니다. ` : ''}
+       OCR은 글자를 잘못 읽는 경우가 있어, <b>결과를 반드시 눈으로 확인한 뒤</b> 진단을 실행해 주세요.</p>
+       <div class="row" style="margin-top:10px;align-items:center;gap:8px">
+         <button class="btn sm" id="ocrRun" type="button">이미지에서 글자 읽기 (OCR) 시작</button>
+         <button class="btn sm ghost" id="ocrCancel" type="button" hidden>중단</button>
+         <span class="note" id="ocrStat"></span>
+       </div>`;
+    $('#ocrRun').onclick = () => runOcr(file, pages);
+    $('#ocrCancel').onclick = () => { ocrCancelled = true; $('#ocrStat').textContent = '중단하는 중…'; };
+  }
+
+  async function runOcr(file, pages) {
+    const run = $('#ocrRun'), cancel = $('#ocrCancel'), stat = $('#ocrStat');
+    ocrCancelled = false;
+    run.disabled = true; cancel.hidden = false;
+    const t0 = Date.now();
+    try {
+      const text = await Record.ocrFile(file, {
+        isCancelled: () => ocrCancelled,
+        onStage: (label, done, total) => {
+          stat.textContent = `${label} ${total ? `(${done}/${total}쪽)` : ''}`;
+        },
+      });
+      const masked = Record.mask(text);
+      $('#recText').value = masked;
+      const chars = masked.replace(/\s/g, '').length;
+      hideOcrBox();
+      banner('warn', `OCR로 ${chars}자를 읽었습니다. (${((Date.now() - t0) / 1000).toFixed(0)}초)`,
+        'OCR은 글자를 잘못 읽을 수 있습니다. 아래 입력칸에서 내용을 훑어본 뒤 [진단 실행]을 눌러 주세요. 특히 과목명 뒤의 Ⅰ·Ⅱ와 숫자는 자주 놓치니 확인이 필요합니다. 진단은 입력칸에 실제로 있는 문장만 근거로 씁니다.',
+        { replaceKey: 'ocr-done' });
+      $('#recText').focus();
+    } catch (e) {
+      run.disabled = false; cancel.hidden = true;
+      stat.textContent = '';
+      banner(ocrCancelled ? 'info' : 'err', ocrCancelled ? 'OCR을 중단했습니다.' : 'OCR에 실패했습니다',
+        ocrCancelled ? '필요하면 다시 시작할 수 있습니다.' : e.message);
     }
   }
 
   function analyze() {
     const text = Record.mask($('#recText').value || '');
-    if (text.trim().length < 50) { banner('warn', '분석할 내용이 너무 짧습니다.', '세특·창체·독서 등 기록을 붙여넣어 주세요.'); return; }
+    const n = text.trim().length;
+    /* "비어 있음"과 "짧음"은 원인이 다르다 — 섞어서 안내하면 왜 안 되는지 알 수 없다 */
+    if (!n) {
+      banner('warn', '붙여넣기 칸이 비어 있습니다.',
+        '아래 칸에 생기부 내용을 붙여넣거나, 위에서 .txt·.pdf 파일을 올려 주세요. 파일을 올렸는데도 칸이 비어 있다면 그 파일에서 글자를 뽑지 못한 것이니(스캔본 등) 내용을 복사해 붙여넣어 주세요.');
+      $('#recText').focus();
+      return;
+    }
+    if (n < 50) {
+      banner('warn', `분석할 내용이 너무 짧습니다. (현재 ${n}자 · 최소 50자)`,
+        '세특·창체·독서 등 기록을 더 붙여넣어 주세요. 한 과목 세특만으로도 진단은 돌아가지만, 많을수록 정확합니다.');
+      return;
+    }
     if (text !== $('#recText').value) {
       $('#recText').value = text;   // 마스킹 결과를 화면에도 반영해 무엇이 지워졌는지 보이게 한다
       banner('info', '식별정보로 보이는 부분을 자동 마스킹했습니다.', '남아 있는 이름·학번이 있으면 직접 지운 뒤 다시 실행해 주세요.');

@@ -368,7 +368,11 @@
         text += c.items.map(it => it.str).join(' ') + '\n';
       }
       if (text.replace(/\s/g, '').length < 30) {
-        throw new Error(`${doc.numPages}쪽을 모두 읽었지만 글자가 거의 없습니다. 스캔하거나 사진으로 만든 PDF는 글자가 아니라 이미지라서 내용을 뽑을 수 없습니다. 나이스에서 받은 "조회·출력용 PDF"를 쓰거나, 생기부 내용을 복사해 아래에 붙여넣어 주세요.`);
+        /* 글자가 없는 PDF = 스캔·사진본. 던지되, 호출하는 쪽이 OCR을 권할 수 있게 표시한다. */
+        const e = new Error(`${doc.numPages}쪽을 모두 읽었지만 글자가 거의 없습니다. 스캔하거나 사진으로 만든 PDF라서 안에 든 것이 글자가 아니라 이미지입니다.`);
+        e.needsOcr = true;
+        e.numPages = doc.numPages;
+        throw e;
       }
       return text;
     }
@@ -378,5 +382,66 @@
     return await file.text();
   }
 
-  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, SECTIONS };
+  /* ---------- 7) 스캔 PDF에서 글자 읽기 (OCR · 브라우저 안에서만) ----------
+     생기부는 미성년자의 민감 개인정보라, 외부 OCR 서비스로 보내지 않는다.
+     엔진(tesseract.js)과 한국어 학습 데이터를 저장소에 함께 두고 이 브라우저에서 처리한다. */
+  const TESS_DIR = 'assets/vendor/tesseract/';
+  let tessPromise = null;
+  function loadTesseract() {
+    if (tessPromise) return tessPromise;
+    tessPromise = (async () => {
+      await loadScript(abs(TESS_DIR + 'tesseract.min.js'));
+      if (!global.Tesseract) throw new Error('OCR 엔진을 불러오지 못했습니다. assets/vendor/tesseract 폴더가 함께 업로드됐는지 확인해 주세요.');
+      return global.Tesseract;
+    })();
+    tessPromise.catch(() => { tessPromise = null; });
+    return tessPromise;
+  }
+
+  /* OCR이 흔히 틀리는 모양만 바로잡는다 — 내용을 고치지는 않는다.
+     특히 세특의 「과목명」은 진단이 과목을 찾는 단서라서, 닫는 낫표가 깨지면 과목이 통째로 안 잡힌다. */
+  function tidyOcr(s) {
+    return String(s || '')
+      .replace(/「([^」\n]{1,24}?)\s*[|ｌlI丨ㅣ·]\s*(?=\s|$)/gm, '「$1」')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  async function ocrFile(file, opts) {
+    const o = opts || {};
+    const [Tess, pdfjsLib] = await Promise.all([loadTesseract(), loadPdfJs()]);
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+    const total = doc.numPages;
+    if (o.onStage) o.onStage('엔진 준비 중…', 0, total);
+
+    const worker = await Tess.createWorker('kor', 1, {
+      workerPath: abs(TESS_DIR + 'worker.min.js'),
+      corePath: abs(TESS_DIR),
+      langPath: abs(TESS_DIR + 'lang'),
+      gzip: true,
+    });
+    let text = '';
+    try {
+      for (let i = 1; i <= total; i++) {
+        if (o.isCancelled && o.isCancelled()) throw new Error('사용자가 중단했습니다.');
+        if (o.onStage) o.onStage(`${i}쪽 읽는 중…`, i - 1, total);
+        const page = await doc.getPage(i);
+        const vp = page.getViewport({ scale: 2 });          // 200dpi 정도 — 작은 글씨도 읽히는 선
+        const cv = document.createElement('canvas');
+        cv.width = vp.width; cv.height = vp.height;
+        await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        const r = await worker.recognize(cv);
+        text += (r.data.text || '') + '\n';
+        cv.width = cv.height = 0;                            // 메모리 반환
+      }
+    } finally {
+      try { await worker.terminate(); } catch (e) {}
+    }
+    if (o.onStage) o.onStage('마무리 중…', total, total);
+    return tidyOcr(text);
+  }
+
+  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, SECTIONS };
 })(window);

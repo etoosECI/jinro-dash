@@ -5,6 +5,11 @@
 (function (global) {
   'use strict';
 
+  /* 배포 버전 — 올릴 때마다 이 값을 바꾸면 브라우저가 들고 있던 옛 파일을 버린다.
+     (index.html의 ?v= 값과 같게 유지할 것. 예전에 새 학과를 올렸는데
+      캐시 때문에 화면에 안 나타난 적이 있다.) */
+  const VERSION = '4.9';
+
   /* ---------- DOM 헬퍼 ---------- */
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -79,7 +84,7 @@
   async function loadJSON(relPath, opts) {
     const o = opts || {};
     if (cache.has(relPath)) return cache.get(relPath);
-    const url = BASE + 'data/' + relPath.split('/').map(encodeURIComponent).join('/');
+    const url = BASE + 'data/' + relPath.split('/').map(encodeURIComponent).join('/') + '?v=' + VERSION;
     let data = null;
     try {
       const res = await fetch(url, { cache: 'no-cache' });
@@ -133,5 +138,5 @@
   global.addEventListener('error', e => banner('err', '화면 오류가 발생했습니다', (e.message || '') + ' — 다른 기능은 계속 사용할 수 있습니다.'));
   global.addEventListener('unhandledrejection', e => banner('err', '처리 중 오류가 발생했습니다', String((e.reason && e.reason.message) || e.reason || '')));
 
-  global.Core = { $, $$, el, esc, banner, validate, loadJSON, normCat, CATS, todayKST, nowKST, matches, debounce };
+  global.Core = { $, $$, el, esc, banner, validate, loadJSON, normCat, CATS, todayKST, nowKST, matches, debounce, VERSION };
 })(window);

@@ -163,6 +163,10 @@
      =========================================================== */
   const SCHOOL_SCHEMA = { schoolId: '문자열', name: '문자열', tracks: '배열', region: '객체?' };
 
+  /* 자동완성으로 학교를 고르면 시도·시군구 드롭다운도 그 학교에 맞춰 둔다.
+     (지역이 여러 개가 되면서, 경기도 학교를 골랐는데 드롭다운은 "서울 강남구"로 남아 혼란을 준다) */
+  let syncRegionSelects = null;
+
   async function initSchool() {
     S.regions = await loadJSON('regions.json', { schema: { sido: '배열' } });
     if (!S.regions) { $('#schoolNote').textContent = '지역 목록을 불러오지 못했습니다.'; return; }
@@ -186,6 +190,14 @@
       ((sg && sg.schools) || []).forEach(s => schoolSel.appendChild(el('option', { value: s.path, text: `${s.name} · ${s.type}` })));
     }
     schoolSel.onchange = () => { if (schoolSel.value) selectSchoolByPath(schoolSel.value); };
+
+    syncRegionSelects = path => {
+      S.regions.sido.forEach((sd, i) => (sd.sigungu || []).forEach((sg, j) => {
+        if (!(sg.schools || []).some(sc => sc.path === path)) return;
+        sidoSel.value = String(i); fillSigungu();
+        sgSel.value = String(j); fillSchools();
+      }));
+    };
 
     /* 학교명 자동완성 — 가벼운 인덱스만으로 동작 */
     const flat = [];
@@ -226,6 +238,7 @@
     $('#hSchool').textContent = `🏫 ${data.name}` + (data.region ? ` · ${data.region.sido} ${data.region.sigungu}` : '');
     $('#schoolNote').innerHTML = `출처: ${esc(data.source || '미기재')} · 유형: <b>${esc(data.schoolType || '미기재')}</b>`;
     $('#schoolBody').hidden = false;
+    if (syncRegionSelects) syncRegionSelects(path);
     $('#schoolSel').value = path;
 
     renderTracks(wantTrack);

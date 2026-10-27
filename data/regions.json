@@ -1,6 +1,6 @@
 {
   "schemaVersion": "4.0",
-  "updatedAt": "2026-08",
+  "updatedAt": "2026-10",
   "sido": [
     {
       "name": "서울특별시",
@@ -119,6 +119,25 @@
               "name": "대원외국어고등학교",
               "type": "특목고(외국어고)",
               "path": "schools/seoul/gwangjin/seoul-gwangjin-daewon.json",
+              "hasAchievement": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "경기도",
+      "dir": "gyeonggi",
+      "sigungu": [
+        {
+          "name": "과천시",
+          "dir": "gwacheon",
+          "schools": [
+            {
+              "schoolId": "gyeonggi-gwacheon-gwacheon",
+              "name": "과천외국어고등학교",
+              "type": "특목고(외국어고)",
+              "path": "schools/gyeonggi/gwacheon/gyeonggi-gwacheon-gwacheon.json",
               "hasAchievement": true
             }
           ]

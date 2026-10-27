@@ -15,12 +15,13 @@ import { CATALOG, GROUP_DEFAULTS } from './topics/catalog.mjs';
 import { SHARED } from './topics/shared.mjs';
 import { EXTRA } from './extra-topics.mjs';
 import { SUBJECT_PLAN, normSubject } from './topics/subjects.mjs';
+import { LEGACY_SNAPSHOT } from './topics/legacy.mjs';
 
 const ROOT = path.resolve('.');
 const SRC = process.argv[2];
 
 /* ---------- 프로토타입에서 기존 4개 학과의 주제·자료 읽기 ---------- */
-let LEGACY_POOLS = {}, LEGACY_RES = {};
+let LEGACY_POOLS = {}, LEGACY_RES = {}, usingSnapshot = false;
 if (SRC && fs.existsSync(SRC)) {
   const lines = fs.readFileSync(SRC, 'utf8').split('\n');
   const a = lines.findIndex(l => l.startsWith('function T(t,bg,q,m,o,s,x,tags)'));
@@ -35,7 +36,12 @@ if (SRC && fs.existsSync(SRC)) {
   }
   LEGACY_RES = ctx.__O.RES || {};
 } else {
-  console.warn('※ 프로토타입 경로가 없어 legacy 주제 없이 빌드합니다.');
+  /* 프로토타입 원본은 저장소에 없습니다(1회성 업로드였음).
+     경로 없이 빌드하면 의예·경영·사회학 학과의 원본 주제가 통째로 사라지므로,
+     스냅샷(tools/topics/legacy.mjs)으로 같은 결과를 복원합니다. */
+  usingSnapshot = true;
+  for (const [k, v] of Object.entries(LEGACY_SNAPSHOT)) LEGACY_POOLS[k] = v.topicPools;
+  console.log('※ 프로토타입 경로가 없어 legacy 스냅샷(tools/topics/legacy.mjs)으로 빌드합니다.');
 }
 
 /* ---------- 계열별 공통 자료 (검증된 것만) ----------
@@ -167,7 +173,7 @@ for (const p of CATALOG) {
   const legacyRes = p.legacy && LEGACY_RES[p.legacy]
     ? LEGACY_RES[p.legacy].map(r => ({ kind: r.t, title: r.title, author: r.author,
         publisher: r.pub, find: r.find, why: r.why, verified: true }))
-    : [];
+    : (p.legacy && LEGACY_SNAPSHOT[p.legacy] ? LEGACY_SNAPSHOT[p.legacy].resources : []);
   const resources = legacyRes.length ? legacyRes
     : (GROUP_RESOURCES[p.group] || []).map(r => ({ ...r, verified: true }));
 
@@ -185,9 +191,13 @@ for (const p of CATALOG) {
     /* 목록에 없는 과목을 보조로 잡는 키워드 (교과군 안에서만 적용) */
     recommendKeywords: p.recommendKeywords || [],
     areaMap: p.areaMap || gd.areaMap,
-    ownTopicCount: Object.values(ownPools).reduce((n, a) => n + a.length, 0)
-                 + Object.values(legacyPools).reduce((n, a) => n + a.length, 0)
-                 + Object.values(extraPools).reduce((n, a) => n + a.length, 0),
+    /* 스냅샷으로 빌드할 때는 legacyPools가 이미 합쳐진 전체라서 세면 부풀려진다.
+       그래서 스냅샷이 기억해 둔 원래 값을 그대로 쓴다. */
+    ownTopicCount: usingSnapshot && p.legacy && LEGACY_SNAPSHOT[p.legacy]
+      ? LEGACY_SNAPSHOT[p.legacy].ownTopicCount
+      : Object.values(ownPools).reduce((n, a) => n + a.length, 0)
+      + Object.values(legacyPools).reduce((n, a) => n + a.length, 0)
+      + Object.values(extraPools).reduce((n, a) => n + a.length, 0),
     topicPools,
     resources,
   };

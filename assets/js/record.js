@@ -328,6 +328,29 @@
     });
   }
 
+  /* pdf.js의 텍스트 조각을 '줄'로 되돌린다.
+     예전에는 한 페이지를 통째로 한 줄로 이어 붙였다. 그러면 생기부의
+     교과학습발달상황 표(줄 단위로 읽는다)가 한 줄도 잡히지 않는다. */
+  function pageLines(items) {
+    const lines = [];
+    let buf = '', lastY = null, lastEnd = null;
+    const flush = () => { const t = buf.replace(/\s+/g, ' ').trim(); if (t) lines.push(t); buf = ''; lastEnd = null; };
+    (items || []).forEach(it => {
+      const str = it.str == null ? '' : String(it.str);
+      const tr = it.transform || [];
+      const y = tr.length > 5 ? Math.round(tr[5]) : null;
+      const x = tr.length > 4 ? tr[4] : null;
+      if (lastY != null && y != null && Math.abs(y - lastY) > 2) flush();      // 줄이 바뀜
+      if (buf && x != null && lastEnd != null && x - lastEnd > 1) buf += ' ';  // 칸이 떨어져 있으면 띄어쓰기
+      buf += str;
+      if (x != null) lastEnd = x + (Number(it.width) || 0);
+      if (y != null) lastY = y;
+      if (it.hasEOL) flush();
+    });
+    flush();
+    return lines;
+  }
+
   let pdfjsPromise = null;
   function loadPdfJs() {
     if (pdfjsPromise) return pdfjsPromise;
@@ -365,7 +388,7 @@
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
         const c = await page.getTextContent();
-        text += c.items.map(it => it.str).join(' ') + '\n';
+        text += pageLines(c.items).join('\n') + '\n';
       }
       if (text.replace(/\s/g, '').length < 30) {
         /* 글자가 없는 PDF = 스캔·사진본. 던지되, 호출하는 쪽이 OCR을 권할 수 있게 표시한다. */
@@ -455,28 +478,51 @@
     '기술·가정': '기술·가정', 기술가정: '기술·가정', '기술ㆍ가정': '기술·가정',
     정보: '정보', 제2외국어: '제2외국어', 한문: '한문', 교양: '교양',
   };
-  const GRADE_RE = /^([1-2])\s+(\S+)\s+(.+?)\s+(\d{1,2})\s+(\d{1,3}(?:\.\d+)?)\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*(?:\(\s*(\d{1,3}(?:\.\d+)?)\s*\))?\s*([A-E])?\s*(?:\(\s*(\d{1,4})\s*\))?\s*(\d(?:\.\d)?)?\s*$/;
+  /* 성적 한 칸: "원점수/과목평균(표준편차) 성취도(수강자수) 석차등급"
+     표준편차·성취도·수강자수·석차등급은 학교와 과목 구분에 따라 없을 수 있다.
+     ↓ 줄 단위용 / 한 줄로 뭉친 텍스트 훑기용 — 정규식 리터럴로 둔다(이스케이프 사고 방지). */
+  const LINE_RE = /^([1-2])\s*(?:학기)?\s+([가-힣][가-힣·ㆍ]{0,9}(?:\s*\([^)]{0,24}\))?)\s+(.+?)\s+(\d{1,2})\s*(?:단위|학점)?\s+(\d{1,3}(?:\.\d+)?)\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*(?:\(\s*(\d{1,3}(?:\.\d+)?)\s*\))?\s*([A-E])?\s*(?:\(\s*(\d{1,4})\s*\))?\s*(\d(?:\.\d)?)?\s*(?:등급)?\s*$/;
+  const SCAN_RE = /([1-2])\s*(?:학기)?\s+([가-힣][가-힣·ㆍ]{0,9}(?:\s*\([^)]{0,24}\))?)\s+([가-힣A-Za-zⅠⅡⅢI\d·ㆍ ]{2,22}?)\s+(\d{1,2})\s*(?:단위|학점)?\s+(\d{1,3}(?:\.\d+)?)\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*(?:\(\s*(\d{1,3}(?:\.\d+)?)\s*\))?\s*([A-E])?\s*(?:\(\s*(\d{1,4})\s*\))?\s*(\d(?:\.\d)?)?\s*(?:등급)?/g;
+
+  function pushRow(out, grade, m) {
+    const num = v => (v == null || v === '' ? null : Number(v));
+    const subject = String(m[3]).trim();
+    const area = String(m[2]).replace(/\s+/g, '').trim();
+    if (!/[가-힣]/.test(subject) || subject.length > 24) return;
+    if (!/[가-힣]/.test(area)) return;
+    out.push({
+      grade: grade || 1, semester: Number(m[1]),
+      area: AREA_FIX[area] || area, subject,
+      credits: num(m[4]), rawScore: num(m[5]), mean: num(m[6]), stdev: num(m[7]),
+      achievement: m[8] || null, takers: num(m[9]), rank: num(m[10]),
+    });
+  }
 
   function parseGrades(text) {
+    const src = String(text || '');
     const rows = [];
     let grade = null;
-    const num = v => (v == null || v === '' ? null : Number(v));
-    String(text || '').split(/\r?\n/).forEach(raw => {
+    /* ① 줄 단위 — 제대로 줄이 나뉜 텍스트 */
+    src.split(/\r?\n/).forEach(raw => {
       const line = raw.replace(/\s+/g, ' ').trim();
       if (!line) return;
       const g = line.match(/^\[?\s*([1-3])\s*학년\s*\]?/);
       if (g && line.length < 24) { grade = Number(g[1]); return; }
-      const m = line.match(GRADE_RE);
-      if (!m) return;
-      const subject = m[3].trim();
-      if (!/[가-힣]/.test(subject)) return;                 // 과목명에 한글이 없으면 표가 아니다
-      rows.push({
-        grade: grade || 1, semester: Number(m[1]),
-        area: AREA_FIX[m[2]] || m[2], subject,
-        credits: num(m[4]), rawScore: num(m[5]), mean: num(m[6]), stdev: num(m[7]),
-        achievement: m[8] || null, takers: num(m[9]), rank: num(m[10]),
-      });
+      const m = line.match(LINE_RE);
+      if (m) pushRow(rows, grade, m);
     });
+    if (rows.length) return rows;
+
+    /* ② 한 줄로 뭉친 텍스트 — 학년 표시를 따라가며 성적칸을 훑는다 */
+    const marks = [...src.matchAll(/([1-3])\s*학년/g)].map(m => ({ at: m.index, g: Number(m[1]) }));
+    const gradeAt = pos => {
+      let g = null;
+      for (const mk of marks) { if (mk.at <= pos) g = mk.g; else break; }
+      return g;
+    };
+    SCAN_RE.lastIndex = 0;
+    let m;
+    while ((m = SCAN_RE.exec(src)) !== null) pushRow(rows, gradeAt(m.index), m);
     return rows;
   }
 

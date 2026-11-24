@@ -40,38 +40,48 @@
     const h = host();
     return (h && h.S.profile && h.S.profile.studentKey) || '';
   };
-  function handoffUrl() {
+  /* 넘길 수 있는 두 보드 — 상담 진단실이 학생 기록의 본체, 정밀분석은 학생부 전용 보드 */
+  const EC_BOARDS = [
+    { id: 'clinic', page: '', label: '상담 진단실로 넘기기',
+      why: '학생 이름·고교·희망 학과·교육편제와 선택 과목·교과 성적이 상담 기록에 채워집니다.' },
+    { id: 'hakjong', page: 'hakjong.html', label: '학생부 정밀분석으로',
+      why: '학교 편제와 학과 핵심·권장 과목이 정밀분석 M4(교육과정)에 채워집니다.' },
+  ];
+  function handoffUrl(boardId) {
     const k = profileKey();
-    return k ? `${EC}hakjong.html?jinro=${encodeURIComponent(k)}` : `${EC}hakjong.html`;
+    const b = EC_BOARDS.find(x => x.id === boardId) || EC_BOARDS[0];
+    return EC + b.page + (k ? `?jinro=${encodeURIComponent(k)}` : '');
   }
   /* 넘기기 전에 반드시 저장한다 — 저장이 안 돼 있으면 정밀분석 쪽에서 설계를 못 찾는다 */
-  function handoff() {
+  function handoff(boardId) {
     const h = host();
     if (!h || !profileKey()) {
-      banner('warn', '먼저 ① 시작에서 가명 ID를 입력해 주세요.', '정밀분석 보드는 저장된 설계를 가명 ID로 찾습니다.');
+      banner('warn', '먼저 ① 시작에서 가명 ID를 입력해 주세요.', 'Expert-Course는 저장된 설계를 가명 ID로 찾습니다.');
       return;
     }
-    h.persist('Expert-Course', '학생부 정밀분석으로 넘김');
+    const b = EC_BOARDS.find(x => x.id === boardId) || EC_BOARDS[0];
+    h.persist('Expert-Course', b.label);
     const S = h.S;
-    const what = [S.school && S.school.name, S.track && S.track.label,
+    const what = [S.profile && S.profile.studentName, S.school && S.school.name,
                   S.program ? S.program.name : (S.major && S.major.name)].filter(Boolean).join(' · ');
-    banner('info', '학생부 정밀분석 보드로 넘깁니다.', what
-      ? `${what} — 정밀분석 M4(교육과정)에 이 학교 편제와 학과 핵심·권장 과목이 채워집니다.`
-      : '정밀분석 보드에서 이 설계를 선택해 연결하세요.');
-    global.open(handoffUrl(), '_blank', 'noopener');
+    banner('info', b.label.replace('로 넘기기', '').replace('으로', '') + '(으)로 넘깁니다.',
+      (what ? what + ' — ' : '') + b.why + ' 이미 적혀 있는 칸은 덮지 않습니다.', { replaceKey: 'ec-handoff' });
+    global.open(handoffUrl(b.id), '_blank', 'noopener');
   }
 
   /* 넘기기 버튼 — 생기부 진단 화면과 설계 화면 양쪽에 같은 모양으로 단다 */
   function handoffRow() {
     const k = profileKey();
-    return `<div class="row" style="margin-top:10px;align-items:center;gap:8px">
-      <button class="btn sm" id="ecHandoff" type="button">학생부 정밀분석으로 넘기기 ↗</button>
-      <span class="note">${k ? `가명 ID <b>${esc(k)}</b>로 저장한 뒤 정밀분석 보드를 엽니다. 학교 편제·선택 학과가 함께 넘어갑니다.`
-                            : '① 시작에서 가명 ID를 입력하면 활성화됩니다.'}</span></div>`;
+    return `<div class="row" style="margin-top:10px;align-items:center;gap:8px;flex-wrap:wrap">
+        ${EC_BOARDS.map(b => `<button class="btn sm${b.id === 'clinic' ? '' : ' ghost'}" type="button" data-ec="${b.id}">${esc(b.label)} ↗</button>`).join('')}
+      </div>
+      <p class="note" style="margin-top:6px">${k
+        ? `가명 ID <b>${esc(k)}</b>로 저장한 뒤 해당 보드를 엽니다. 넘어가는 것은 <b>이름·학교·편제·선택 과목·희망 학과·교과 성적</b>이고, 역량 판단은 넘기지 않습니다(상담자가 쓰는 자리).`
+        : '① 시작에서 가명 ID를 입력하면 활성화됩니다.'}</p>`;
   }
   function bindHandoff(root) {
-    const b = root && root.querySelector('#ecHandoff');
-    if (b) b.onclick = handoff;
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('[data-ec]'), b => { b.onclick = () => handoff(b.dataset.ec); });
   }
 
   /* ① STEP 3 생기부 진단 — Expert-Course 정밀분석 원문 가져오기 */
@@ -123,7 +133,7 @@
     if (step === 'record') mountRecordImport();
     if (step === 'design' || step === 'major') mountDesignHandoff();
     [document.getElementById('ecImport'), document.getElementById('ecDesignHandoff')]
-      .forEach(w => { if (w) { const n = w.querySelector('#ecHandoff'); if (n) bindHandoff(w); } });
+      .forEach(w => { if (w) bindHandoff(w); });
     mountHeaderLink(true);
   }
 
@@ -185,8 +195,8 @@
     /* onclick에서 href를 바꾸면 브라우저에 따라 바뀌기 전 주소로 열린다.
        화면이 바뀔 때마다 미리 넣어 둔다. */
     const k = profileKey();
-    a.href = k ? handoffUrl() : EC;
-    a.title = k ? `'${k}' 설계를 학생부 정밀분석으로 넘깁니다` : '입시 전문가 과정 실습 도구 (상담 진단실·학생부 정밀분석)';
+    a.href = k ? handoffUrl('clinic') : EC;
+    a.title = k ? `'${k}' 설계를 상담 진단실로 넘깁니다` : '입시 전문가 과정 실습 도구 (상담 진단실·학생부 정밀분석)';
   }
 
   function init() { mountHeaderLink(); mountRecordImport(); mountDesignHandoff(); }

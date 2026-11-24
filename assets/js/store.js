@@ -31,8 +31,11 @@
 
   function blank(id) {
     return {
-      profileVersion: '4.1',
+      profileVersion: '5.0',
       studentKey: id,
+      studentName: '',           // 실명 (동의 후에만 · 이 브라우저에만)
+      nameConsent: false,
+      grades: null,              // { source, at, rows:[...] } 생기부에서 읽은 교과 성적
       schoolId: null, schoolName: null, schoolPath: null,
       trackId: null,
       entryGrade: null,          // 2 = 2학년 진입, 3 = 3학년 진입

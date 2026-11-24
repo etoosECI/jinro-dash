@@ -9,6 +9,7 @@
   /* ---------------- 상태 ---------------- */
   const S = {
     profile: null,
+    grades: null,       // 생기부에서 읽은 교과 성적 { source, at, rows[] }
     regions: null,
     school: null,       // 현재 학교 상세 JSON
     track: null,        // 현재 과정
@@ -82,6 +83,7 @@
     S.profile.manualSubjects = [...S.manual];
     S.profile.programId = S.program ? S.program.programId : null;
     S.profile.topicIdx = S.topicIdx;
+    if (S.grades) S.profile.grades = S.grades;
     if (step) Store.log(S.profile, step, detail);
     const ok = Store.save(S.profile);
     if (ok && refreshProfileList) refreshProfileList(S.profile.studentKey);
@@ -107,6 +109,16 @@
     refreshList();
     refreshProfileList = refreshList;      // 저장할 때마다 목록을 다시 그린다
 
+    /* 학생 이름 — 동의 체크를 해야 입력할 수 있다 (미성년 개인정보 최소 보관) */
+    const nameIn = $('#nameInput'), nameOk = $('#nameConsent');
+    function syncName() {
+      nameIn.disabled = !nameOk.checked;
+      if (!nameOk.checked) nameIn.value = '';
+      if (S.profile) { S.profile.nameConsent = nameOk.checked; S.profile.studentName = nameIn.value.trim(); }
+    }
+    nameOk.onchange = () => { syncName(); if (nameOk.checked) nameIn.focus(); };
+    nameIn.oninput = () => { if (S.profile) S.profile.studentName = nameIn.value.trim(); };
+
     $('#newIdBtn').onclick = () => { idInput.value = Store.newId(); };
     $('#loadBtn').onclick = async () => {
       const id = sel.value;
@@ -121,6 +133,11 @@
       S.manual = (p.manualSubjects || []).slice();
       S.topicIdx = p.topicIdx || {};
       S.diagnosis = p.record && p.record.diagnosis || null;
+      S.grades = p.grades || null;
+      $('#nameConsent').checked = !!p.nameConsent;
+      $('#nameInput').disabled = !p.nameConsent;
+      $('#nameInput').value = p.studentName || '';
+      renderGrades();
       banner('info', `'${id}' 설계를 불러왔습니다.`, p.schoolName ? `학교: ${p.schoolName}` : '');
       if (p.schoolPath) { await selectSchoolByPath(p.schoolPath, p.trackId); }
       if (p.majorId) { await selectMajor(p.majorId, { restoring: true }); }
@@ -156,6 +173,8 @@
         banner('warn', `'${id}'은(는) 실명처럼 보입니다.`,
           '이 값은 이 브라우저에만 저장되고 서버로 전송되지 않지만, 공용 PC라면 이니셜이나 별칭(예: 유ㅎㅈ-2027)을 권합니다. 그대로 진행합니다.');
       }
+      S.profile.nameConsent = $('#nameConsent').checked;
+      S.profile.studentName = S.profile.nameConsent ? ($('#nameInput').value || '').trim() : '';
       S.profile.entryGrade = S.entryGrade;
       persist('시작', `가명 ID ${id} · ${S.profile.entryGrade}학년 진입`);
       banner('info', `'${id}'(으)로 저장했습니다.`,
@@ -1492,6 +1511,81 @@
     }
   }
 
+  /* ---------- 교과 성적 (생기부 표에서 읽고, 사람이 검수) ---------- */
+  function readGradesFrom(text) {
+    const rows = Record.parseGrades(text);
+    if (!rows.length) {
+      if (!S.grades) banner('info', '교과 성적표는 읽지 못했습니다.',
+        '붙여넣은 내용에 "교과학습발달상황" 표가 없거나 형식이 달라 보입니다. 세특 진단은 그대로 됩니다. 성적이 필요하면 성적표 부분을 함께 붙여넣어 주세요.',
+        { replaceKey: 'grades' });
+      return;
+    }
+    S.grades = { source: '생기부 교과학습발달상황', at: Core.nowKST(), rows };
+    persist('성적 읽기', `${rows.length}과목`);
+    renderGrades();
+    banner('warn', `교과 성적 ${rows.length}과목을 읽었습니다.`,
+      '아래 표에서 등급·원점수·이수단위가 맞는지 확인하고 고쳐 주세요. 잘못 읽은 줄은 삭제하면 됩니다. 이 성적이 전문가 과정 상담 진단실의 교과 경쟁력 분석에 그대로 쓰입니다.',
+      { replaceKey: 'grades' });
+  }
+
+  function renderGrades() {
+    const box = $('#gradeBox'); if (!box) return;
+    const rows = (S.grades && S.grades.rows) || [];
+    if (!rows.length) { box.hidden = true; box.innerHTML = ''; return; }
+    const sum = Record.summarizeGrades(rows);
+    const n = v => (v == null ? '–' : v);
+    box.hidden = false;
+    box.innerHTML =
+      `<div class="sec-title">읽어 온 교과 성적 <span class="note" style="text-transform:none">— 확인하고 고쳐 주세요</span></div>
+       <p class="note">출처: ${esc(S.grades.source)} · ${esc(S.grades.at)} · ${rows.length}과목 ·
+         전 과목 평균 등급 <b>${n(sum.overallRank)}</b> · 이수단위 합 <b>${sum.totalCredits}</b></p>
+       <div style="overflow:auto;margin-top:10px">
+       <table class="ach-table"><thead><tr>
+         <th>학년</th><th>학기</th><th>교과</th><th>과목</th><th>단위</th><th>원점수</th><th>과목평균</th><th>성취도</th><th>등급</th><th></th>
+       </tr></thead><tbody>` +
+      rows.map((r, i) => `<tr data-gi="${i}">
+         <td><input class="gin" style="width:3em" data-gk="grade" value="${esc(r.grade)}"></td>
+         <td><input class="gin" style="width:3em" data-gk="semester" value="${esc(r.semester)}"></td>
+         <td><input class="gin" style="width:6em" data-gk="area" value="${esc(r.area || '')}"></td>
+         <td><input class="gin" style="width:11em" data-gk="subject" value="${esc(r.subject || '')}"></td>
+         <td><input class="gin" style="width:3.5em" data-gk="credits" value="${esc(r.credits ?? '')}"></td>
+         <td><input class="gin" style="width:4.5em" data-gk="rawScore" value="${esc(r.rawScore ?? '')}"></td>
+         <td><input class="gin" style="width:4.5em" data-gk="mean" value="${esc(r.mean ?? '')}"></td>
+         <td><input class="gin" style="width:3.5em" data-gk="achievement" value="${esc(r.achievement ?? '')}"></td>
+         <td><input class="gin" style="width:3.5em" data-gk="rank" value="${esc(r.rank ?? '')}"></td>
+         <td><button class="btn ghost sm" type="button" data-gdel="${i}">삭제</button></td></tr>`).join('') +
+      `</tbody></table></div>
+       <div class="btnrow" style="margin-top:10px">
+         <button class="btn sm" id="gradeSave" type="button">수정 내용 저장</button>
+         <button class="btn sm ghost" id="gradeClear" type="button">성적 전체 지우기</button>
+       </div>
+       <p class="note">교과별 요약: ` +
+      ['국어', '수학', '영어', '사회', '과학'].map(a => {
+        const b = sum.byArea[a];
+        return `${a} ${b.rank == null ? '–' : b.rank}등급/${b.credits}단위`;
+      }).join(' · ') +
+      (sum.spread != null ? ` · 교과 간 격차 <b>${sum.spread}등급</b>` : '') + '</p>';
+
+    const num = v => { const t = String(v).trim(); return t === '' ? null : (isNaN(Number(t)) ? t : Number(t)); };
+    $$('#gradeBox .gin').forEach(inp => {
+      inp.onchange = () => {
+        const i = Number(inp.closest('tr').dataset.gi), k = inp.dataset.gk;
+        S.grades.rows[i][k] = (k === 'area' || k === 'subject' || k === 'achievement') ? inp.value.trim() : num(inp.value);
+      };
+    });
+    $$('#gradeBox [data-gdel]').forEach(b => {
+      b.onclick = () => { S.grades.rows.splice(Number(b.dataset.gdel), 1); persist('성적 수정', '행 삭제'); renderGrades(); };
+    });
+    $('#gradeSave').onclick = () => {
+      S.grades.at = Core.nowKST(); persist('성적 수정', `${S.grades.rows.length}과목`); renderGrades();
+      banner('info', '교과 성적을 저장했습니다.', '상담 진단실에서 이 값을 그대로 가져갑니다.', { replaceKey: 'grades' });
+    };
+    $('#gradeClear').onclick = () => {
+      if (!confirm('읽어 온 교과 성적을 모두 지울까요?')) return;
+      S.grades = null; if (S.profile) S.profile.grades = null; persist('성적 삭제', ''); renderGrades();
+    };
+  }
+
   function analyze() {
     const text = Record.mask($('#recText').value || '');
     const n = text.trim().length;
@@ -1512,6 +1606,9 @@
       banner('info', '식별정보로 보이는 부분을 자동 마스킹했습니다.', '남아 있는 이름·학번이 있으면 직접 지운 뒤 다시 실행해 주세요.');
     }
     rawText = text;
+    /* 세특 진단과 별개로, 교과학습발달상황 표에서 과목 성적을 읽어 둔다.
+       전문가 과정 상담 진단실이 이 성적을 가져다 교과 경쟁력을 분석한다. */
+    readGradesFrom(text);
     const knownSubjects = new Set();
     (S.track ? S.track.phases : []).forEach(p => (p.options || []).forEach(o => knownSubjects.add(o.subject)));
     Object.keys((S.research && S.research.subjects) || {}).forEach(s => knownSubjects.add(s));

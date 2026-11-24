@@ -443,5 +443,81 @@
     return tidyOcr(text);
   }
 
-  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, SECTIONS };
+  /* ---------- 8) 교과학습발달상황 표에서 과목 성적 읽기 ----------
+     생기부의 성적표는 학교·발급 경로마다 조금씩 다르다. 공통으로 나타나는
+     "원점수/과목평균(표준편차) 성취도(수강자수) 석차등급" 형태만 잡고,
+     못 읽은 줄은 조용히 버린다. 읽은 결과는 반드시 사람이 검수한다. */
+  const AREA_FIX = {
+    국어: '국어', 수학: '수학', 영어: '영어', 과학: '과학', 한국사: '한국사',
+    사회: '사회', '사회(역사/도덕포함)': '사회', '사회(역사/도덕 포함)': '사회',
+    '역사': '사회', '도덕': '사회',
+    체육: '체육', 예술: '예술', '예술(음악/미술)': '예술',
+    '기술·가정': '기술·가정', 기술가정: '기술·가정', '기술ㆍ가정': '기술·가정',
+    정보: '정보', 제2외국어: '제2외국어', 한문: '한문', 교양: '교양',
+  };
+  const GRADE_RE = /^([1-2])\s+(\S+)\s+(.+?)\s+(\d{1,2})\s+(\d{1,3}(?:\.\d+)?)\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*(?:\(\s*(\d{1,3}(?:\.\d+)?)\s*\))?\s*([A-E])?\s*(?:\(\s*(\d{1,4})\s*\))?\s*(\d(?:\.\d)?)?\s*$/;
+
+  function parseGrades(text) {
+    const rows = [];
+    let grade = null;
+    const num = v => (v == null || v === '' ? null : Number(v));
+    String(text || '').split(/\r?\n/).forEach(raw => {
+      const line = raw.replace(/\s+/g, ' ').trim();
+      if (!line) return;
+      const g = line.match(/^\[?\s*([1-3])\s*학년\s*\]?/);
+      if (g && line.length < 24) { grade = Number(g[1]); return; }
+      const m = line.match(GRADE_RE);
+      if (!m) return;
+      const subject = m[3].trim();
+      if (!/[가-힣]/.test(subject)) return;                 // 과목명에 한글이 없으면 표가 아니다
+      rows.push({
+        grade: grade || 1, semester: Number(m[1]),
+        area: AREA_FIX[m[2]] || m[2], subject,
+        credits: num(m[4]), rawScore: num(m[5]), mean: num(m[6]), stdev: num(m[7]),
+        achievement: m[8] || null, takers: num(m[9]), rank: num(m[10]),
+      });
+    });
+    return rows;
+  }
+
+  /* 국·수·영·사·과 5교과를 학기별로 집계 — 평균 등급·평균 원점수·이수단위 합 */
+  const CORE5 = ['국어', '수학', '영어', '사회', '과학'];
+  function summarizeGrades(rows) {
+    const list = (rows || []).filter(r => r && r.subject);
+    const key = r => `${r.grade}-${r.semester}`;
+    const terms = [...new Set(list.map(key))].sort();
+    const area = r => (r.area === '한국사' ? '사회' : r.area);
+    const w = (arr, f) => {                                   // 이수단위 가중평균
+      let s = 0, c = 0;
+      arr.forEach(r => { const v = f(r); if (v == null) return; const u = Number(r.credits) || 1; s += v * u; c += u; });
+      return c ? Math.round((s / c) * 100) / 100 : null;
+    };
+    const byArea = {};
+    CORE5.forEach(a => {
+      const mine = list.filter(r => area(r) === a);
+      byArea[a] = {
+        subjects: mine.length,
+        credits: mine.reduce((n, r) => n + (Number(r.credits) || 0), 0),
+        rank: w(mine, r => r.rank), raw: w(mine, r => r.rawScore),
+        terms: terms.map(t => {
+          const m2 = mine.filter(r => key(r) === t);
+          return { term: t, rank: w(m2, r => r.rank), raw: w(m2, r => r.rawScore), credits: m2.reduce((n, r) => n + (Number(r.credits) || 0), 0) };
+        }).filter(x => x.rank != null || x.raw != null),
+      };
+    });
+    const ranked = CORE5.filter(a => byArea[a].rank != null);
+    const all = w(list, r => r.rank);
+    const best = ranked.slice().sort((a, b) => byArea[a].rank - byArea[b].rank);
+    return {
+      terms, byArea,
+      overallRank: all,
+      overallRaw: w(list, r => r.rawScore),
+      totalCredits: list.reduce((n, r) => n + (Number(r.credits) || 0), 0),
+      spread: ranked.length > 1 ? Math.round((byArea[best[best.length - 1]].rank - byArea[best[0]].rank) * 100) / 100 : null,
+      strong: best.slice(0, 2), weak: best.slice(-2).reverse(),
+      subjectCount: list.length,
+    };
+  }
+
+  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, SECTIONS };
 })(window);

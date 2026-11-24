@@ -35,7 +35,7 @@
   }
 
   /* 현재 설계를 들고 정밀분석 보드로 넘어가는 주소.
-     Expert-Course hakjong.html이 ?jinro=<가명ID>를 읽어 학교·과정·학과를 자동으로 연결한다. */
+     Expert-Course가 ?jinro=<학생 이름>을 읽어 학교·과정·학과를 자동으로 연결한다. */
   const profileKey = () => {
     const h = host();
     return (h && h.S.profile && h.S.profile.studentKey) || '';
@@ -56,7 +56,7 @@
   function handoff(boardId) {
     const h = host();
     if (!h || !profileKey()) {
-      banner('warn', '먼저 ① 시작에서 가명 ID를 입력해 주세요.', 'Expert-Course는 저장된 설계를 가명 ID로 찾습니다.');
+      banner('warn', '먼저 ① 시작에서 학생을 선택해 주세요.', 'Expert-Course는 저장된 학생을 이름으로 찾습니다.');
       return;
     }
     const b = EC_BOARDS.find(x => x.id === boardId) || EC_BOARDS[0];
@@ -76,8 +76,8 @@
         ${EC_BOARDS.map(b => `<button class="btn sm${b.id === 'clinic' ? '' : ' ghost'}" type="button" data-ec="${b.id}">${esc(b.label)} ↗</button>`).join('')}
       </div>
       <p class="note" style="margin-top:6px">${k
-        ? `가명 ID <b>${esc(k)}</b>로 저장한 뒤 해당 보드를 엽니다. 넘어가는 것은 <b>이름·학교·편제·선택 과목·희망 학과·교과 성적</b>이고, 역량 판단은 넘기지 않습니다(상담자가 쓰는 자리).`
-        : '① 시작에서 가명 ID를 입력하면 활성화됩니다.'}</p>`;
+        ? `<b>${esc(k)}</b> 학생으로 저장한 뒤 해당 보드를 엽니다. 넘어가는 것은 <b>이름·학교·편제·선택 과목·희망 학과·교과 성적</b>이고, 역량 판단은 넘기지 않습니다(상담자가 쓰는 자리).`
+        : '① 시작에서 학생을 선택하면 활성화됩니다.'}</p>`;
   }
   function bindHandoff(root) {
     if (!root) return;
@@ -128,7 +128,7 @@
     bindHandoff(wrap);
   }
 
-  /* 화면을 옮길 때마다 가명 ID 상태를 다시 반영한다 */
+  /* 화면을 옮길 때마다 학생 선택 상태를 다시 반영한다 */
   function onStep(S, step) {
     if (step === 'record') mountRecordImport();
     if (step === 'design' || step === 'major') mountDesignHandoff();

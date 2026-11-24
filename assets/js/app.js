@@ -94,91 +94,119 @@
      STEP 1 · 시작
      =========================================================== */
   function initStart() {
-    const idInput = $('#idInput'), sel = $('#profileSel');
-    idInput.value = Store.lastUsed() || Store.newId();
+    const nameIn = $('#nameInput'), nameOk = $('#nameConsent'), addBtn = $('#addStudentBtn'), sel = $('#profileSel');
 
+    /* 저장된 학생 명단 — 이름(없으면 예전 가명 ID)으로 보여 준다 */
     function refreshList(selectId) {
       const keep = selectId || sel.value;
-      sel.innerHTML = '<option value="">— 없음 —</option>';
-      Store.list().forEach(id => {
-        const p = Store.get(id);
-        sel.appendChild(el('option', { value: id, text: `${id} · ${p.schoolName || '학교 미선택'} · ${p.updatedAt || ''}` }));
+      const ids = Store.list();
+      sel.innerHTML = `<option value="">${ids.length ? '— 선택하세요 —' : '— 저장된 학생 없음 —'}</option>`;
+      ids.forEach(id => {
+        const p = Store.get(id) || {};
+        const label = [p.studentName || id, p.schoolName || '학교 미선택', p.updatedAt || ''].filter(Boolean).join(' · ');
+        sel.appendChild(el('option', { value: id, text: label }));
       });
       if (keep && Store.exists(keep)) sel.value = keep;
+      $('#rosterNote').textContent = ids.length
+        ? `명단에 ${ids.length}명이 있습니다. 이 브라우저에만 저장되어 있습니다.`
+        : '아직 저장된 학생이 없습니다. 동의 체크 후 이름을 넣고 [명단에 추가]를 누르세요.';
     }
     refreshList();
-    refreshProfileList = refreshList;      // 저장할 때마다 목록을 다시 그린다
+    refreshProfileList = refreshList;
 
-    /* 학생 이름 — 동의 체크를 해야 입력할 수 있다 (미성년 개인정보 최소 보관) */
-    const nameIn = $('#nameInput'), nameOk = $('#nameConsent');
-    function syncName() {
-      nameIn.disabled = !nameOk.checked;
-      if (!nameOk.checked) nameIn.value = '';
-      if (S.profile) { S.profile.nameConsent = nameOk.checked; S.profile.studentName = nameIn.value.trim(); }
+    /* 동의해야 이름을 쓸 수 있다 */
+    function syncConsent() {
+      const ok = nameOk.checked;
+      nameIn.disabled = !ok; addBtn.disabled = !ok;
+      if (!ok) nameIn.value = '';
     }
-    nameOk.onchange = () => { syncName(); if (nameOk.checked) nameIn.focus(); };
-    nameIn.oninput = () => { if (S.profile) S.profile.studentName = nameIn.value.trim(); };
+    nameOk.onchange = () => { syncConsent(); if (nameOk.checked) nameIn.focus(); };
 
-    $('#newIdBtn').onclick = () => { idInput.value = Store.newId(); };
+    /* 마지막에 쓰던 학생을 되살린다 */
+    const last = Store.lastUsed();
+    if (last && Store.exists(last)) {
+      const p = Store.get(last);
+      if (p && p.nameConsent) { nameOk.checked = true; syncConsent(); nameIn.value = p.studentName || ''; }
+      sel.value = last;
+    } else syncConsent();
+
+    function currentName() { return (nameIn.value || '').trim(); }
+
+    /* 이름을 키로 쓴다 — 가명 ID를 따로 만들지 않는다 */
+    function useStudent(name, opts) {
+      if (!S.profile || S.profile.studentKey !== name) {
+        S.profile = Store.get(name) || Store.blank(name);
+        S.selected = new Set(S.profile.chosenSubjects || []);
+        S.taken = new Set(S.profile.takenSubjects || []);
+        S.manual = (S.profile.manualSubjects || []).slice();
+        S.grades = S.profile.grades || null;
+      }
+      S.profile.studentName = name;
+      S.profile.nameConsent = true;
+      if (!(opts && opts.quiet)) renderGrades();
+      return S.profile;
+    }
+
+    addBtn.onclick = () => {
+      const name = currentName();
+      if (!name) { banner('warn', '학생 이름을 입력해 주세요.', ''); nameIn.focus(); return; }
+      if (Store.exists(name) && !confirm(`'${name}' 학생이 이미 명단에 있습니다. 그 학생을 이어서 작업할까요?`)) return;
+      useStudent(name);
+      persist('명단 추가', name);
+      refreshList(name);
+      banner('info', `'${name}' 학생을 명단에 저장했습니다.`,
+        '아래에서 진입 학년을 고르고 [학교 선택으로]를 누르세요.', { replaceKey: 'roster' });
+    };
+
     $('#loadBtn').onclick = async () => {
       const id = sel.value;
-      if (!id) { banner('info', '이어할 설계를 선택해 주세요.', ''); return; }
+      if (!id) { banner('info', '명단에서 학생을 선택해 주세요.', ''); return; }
       const p = Store.get(id);
       if (!p) return;
       S.profile = p;
-      idInput.value = id;
+      nameOk.checked = true; syncConsent();
+      nameIn.value = p.studentName || id;
       applyEntry(p.entryGrade);
       S.selected = new Set(p.chosenSubjects || []);
       S.taken = new Set(p.takenSubjects || []);
       S.manual = (p.manualSubjects || []).slice();
       S.topicIdx = p.topicIdx || {};
-      S.diagnosis = p.record && p.record.diagnosis || null;
+      S.diagnosis = (p.record && p.record.diagnosis) || null;
       S.grades = p.grades || null;
-      $('#nameConsent').checked = !!p.nameConsent;
-      $('#nameInput').disabled = !p.nameConsent;
-      $('#nameInput').value = p.studentName || '';
       renderGrades();
-      banner('info', `'${id}' 설계를 불러왔습니다.`, p.schoolName ? `학교: ${p.schoolName}` : '');
-      if (p.schoolPath) { await selectSchoolByPath(p.schoolPath, p.trackId); }
-      if (p.majorId) { await selectMajor(p.majorId, { restoring: true }); }
-      if (p.programId) { await selectProgram(p.programId, { restoring: true }); }
+      banner('info', `'${p.studentName || id}' 학생을 불러왔습니다.`, p.schoolName ? `학교: ${p.schoolName}` : '');
+      if (p.schoolPath) await selectSchoolByPath(p.schoolPath, p.trackId);
+      if (p.majorId) await selectMajor(p.majorId, { restoring: true });
+      if (p.programId) await selectProgram(p.programId, { restoring: true });
       renderGapBanners();
       if (p.record && p.record.consent) { $('#consentBox').hidden = true; $('#uploadBox').hidden = false; }
       if (S.diagnosis) renderDiagnosis();
       renderHistory();
       go(p.schoolId ? (p.majorId ? 'design' : 'school') : 'start');
     };
+
     $('#delBtn').onclick = () => {
       const id = sel.value;
       if (!id) return;
-      if (!confirm(`'${id}' 저장 데이터를 완전히 삭제할까요? 되돌릴 수 없습니다.`)) return;
-      Store.remove(id); refreshList();
-      banner('info', '삭제했습니다.', '');
+      const p = Store.get(id) || {};
+      if (!confirm(`'${p.studentName || id}' 학생의 모든 자료(설계·진단·성적)를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+      Store.remove(id);
+      if (S.profile && S.profile.studentKey === id) { S.profile = null; S.grades = null; renderGrades(); }
+      refreshList();
+      banner('info', '명단에서 삭제했습니다.', '');
     };
 
     $$('#entrySeg button').forEach(b => b.onclick = () => applyEntry(Number(b.dataset.entry)));
 
     $('#toSchool').onclick = () => {
-      const id = (idInput.value || '').trim();
-      if (!id) { banner('warn', '가명 ID를 입력해 주세요.', '실명·학번은 넣지 마세요.'); return; }
-      if (/\d{4,}/.test(id) && !/-/.test(id)) { banner('warn', '학번처럼 보이는 ID입니다.', '개인 식별이 가능한 값 대신 가명을 사용해 주세요.'); return; }
+      if (!nameOk.checked) { banner('warn', '먼저 동의 체크를 해 주세요.', '보호자·학생 동의 후에만 이름을 저장합니다.'); return; }
+      const name = currentName();
+      if (!name) { banner('warn', '학생 이름을 입력해 주세요.', '이름이 학생을 구분하는 기준이 됩니다.'); nameIn.focus(); return; }
       if (!S.entryGrade) { banner('warn', '진입 학년을 선택해 주세요.', '2학년 진입과 3학년 진입은 설계 방식이 다릅니다.'); return; }
-      if (!S.profile || S.profile.studentKey !== id) {
-        S.profile = Store.get(id) || Store.blank(id);
-        S.selected = new Set(S.profile.chosenSubjects || []);
-        S.taken = new Set(S.profile.takenSubjects || []);
-      }
-      /* 실명으로 보이면 막지는 않되, 어디에 남는지 한 번 알려 준다 (미성년 개인정보 최소 보관 원칙) */
-      if (/^[가-힣]{2,4}$/.test(id)) {
-        banner('warn', `'${id}'은(는) 실명처럼 보입니다.`,
-          '이 값은 이 브라우저에만 저장되고 서버로 전송되지 않지만, 공용 PC라면 이니셜이나 별칭(예: 유ㅎㅈ-2027)을 권합니다. 그대로 진행합니다.');
-      }
-      S.profile.nameConsent = $('#nameConsent').checked;
-      S.profile.studentName = S.profile.nameConsent ? ($('#nameInput').value || '').trim() : '';
+      useStudent(name, { quiet: true });
       S.profile.entryGrade = S.entryGrade;
-      persist('시작', `가명 ID ${id} · ${S.profile.entryGrade}학년 진입`);
-      banner('info', `'${id}'(으)로 저장했습니다.`,
-        '①의 "저장된 설계 이어하기"에서 언제든 다시 불러올 수 있습니다.', { replaceKey: 'profile-saved' });
+      persist('시작', `${name} · ${S.profile.entryGrade}학년 진입`);
+      refreshList(name);
       go('school');
     };
   }
@@ -1721,7 +1749,7 @@
     cover.appendChild(el('h1', { text: '진로·선택과목 설계 리포트' }));
     cover.appendChild(el('div', { class: 'meta', html:
       `${esc(school ? school.name : '학교 미선택')} · ${esc(major ? major.name : '계열 미선택')}<br>` +
-      `${p.entryGrade ? p.entryGrade + '학년 진입' : ''} · 작성일 ${todayKST()} · 가명 ID <span class="idchip">${esc(p.studentKey || '-')}</span>` }));
+      `${p.entryGrade ? p.entryGrade + '학년 진입' : ''} · 작성일 ${todayKST()} · 학생 <span class="idchip">${esc(p.studentName || p.studentKey || '-')}</span>` }));
     r.appendChild(cover);
 
     /* 1. 학교 편제 요약 */
@@ -1967,7 +1995,7 @@
     const rb = renderBuilder, rr = renderReport, g = go;
     renderBuilder = function () { rb.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onBuilder(S); };
     renderReport = function () { rr.apply(this, arguments); if (window.JinroBridge) window.JinroBridge.onReport(S); };
-    /* 화면을 옮길 때마다 Expert-Course 연결 상태(가명 ID·학과)를 다시 반영한다 */
+    /* 화면을 옮길 때마다 Expert-Course 연결 상태(학생·학과)를 다시 반영한다 */
     go = function (step) {
       const r = g.apply(this, arguments);
       if (window.JinroBridge && window.JinroBridge.onStep) {
@@ -2000,7 +2028,7 @@
     $('#exportBtn').onclick = exportJSON;
     $('#wipeBtn').onclick = () => {
       if (!S.profile) return;
-      if (!confirm('이 가명 ID의 모든 데이터(설계·진단·이력)를 삭제할까요? 되돌릴 수 없습니다.')) return;
+      if (!confirm('이 학생의 모든 데이터(설계·진단·성적·이력)를 삭제할까요? 되돌릴 수 없습니다.')) return;
       Store.remove(S.profile.studentKey);
       S.profile = null; S.selected.clear(); S.taken.clear(); S.manual = []; S.topicIdx = {}; S.diagnosis = null;
       banner('info', '삭제했습니다.', '');

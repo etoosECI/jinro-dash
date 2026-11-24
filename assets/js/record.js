@@ -26,6 +26,7 @@
   /* ---------- 2) 영역 분리 ---------- */
   const SECTIONS = [
     { key: 'award',    label: '수상경력',            re: /수상\s*경력/ },
+    { key: 'activity', label: '창의적 체험활동',      re: /창의적\s*체험\s*활동/ },
     { key: 'career',   label: '진로희망사항',        re: /진로\s*희망/ },
     { key: 'autonomy', label: '자율활동',            re: /자율\s*활동/ },
     { key: 'club',     label: '동아리활동',          re: /동아리\s*활동/ },
@@ -48,6 +49,14 @@
       if (line.length <= 40) {
         const hit = SECTIONS.find(s => s.re.test(line));
         if (hit) { cur = hit.key; continue; }
+      }
+      /* '자율활동: …' 처럼 활동 이름으로 시작하는 줄은 그 자체가 구획이다.
+         (창의적 체험활동을 한 덩어리로 붙여넣으면 이 형태로 들어온다.
+          이걸 못 잡으면 앞 구획인 수상경력에 통째로 섞여 들어간다) */
+      const sub = line.match(/^(자율\s*활동|동아리\s*활동|봉사\s*활동|진로\s*활동)\s*[:：]?\s*/);
+      if (sub) {
+        const hit = SECTIONS.find(x => x.re.test(sub[1]));
+        if (hit) { cur = hit.key; const rest = line.slice(sub[0].length).trim(); out[cur].push(rest || line); continue; }
       }
       out[cur].push(line);
     }
@@ -145,13 +154,104 @@
 
   /* ---------- 5) 진단 ---------- */
   /* ctx = { school, track, major, taken:[], chosen:[], entryGrade } */
+
+  /* ---------- 근거 모음 (상담 진단실이 그대로 쓴다) ----------
+     ★ 독서는 '독서활동상황' 칸을 쓰지 않는다. 그 칸은 대입에 반영되지 않으므로,
+       창의적 체험활동과 세특 서술 '안에' 녹아 있는 책만 센다. 수상경력도 제외한다.
+     ★ 문장은 기록에 있는 그대로 옮긴다 — 요약·각색하지 않는다. */
+  const BOOK_RE = /[「『“"']([^」』”"']{2,40})[」』”"']\s*(?:\(([^)]{1,30})\))?/g;
+  const READ_HINT = /읽|독서|도서|저자|책|원서|서평|발췌|탐독|완독|저서|번역서/;
+  const ACT_KEYS = [['activity', '창의적 체험활동'], ['autonomy', '자율활동'], ['club', '동아리활동'],
+    ['service', '봉사활동'], ['careerAct', '진로활동']];
+
+  /* 세특 줄 맨 앞의 「과목명」은 책이 아니다 — 떼고 본다 */
+  const stripSubject = line => line.replace(/^[「<\[(＜【][^」>\])＞】]{1,22}[」>\])＞】]\s*/, '');
+
+  function findBooks(line, where, subject) {
+    const body = stripSubject(line);
+    const out = [];
+    BOOK_RE.lastIndex = 0;
+    let m;
+    while ((m = BOOK_RE.exec(body))) {
+      const title = m[1].trim(), author = (m[2] || '').trim();
+      if (!title || /^\d+$/.test(title)) continue;
+      /* 과목명·활동명이 따옴표에 들어간 경우를 거르기 위해, 저자 표기가 있거나
+         같은 문장에 '읽/독서/저자' 같은 말이 있어야 책으로 본다 */
+      const near = body.slice(Math.max(0, m.index - 40), m.index + title.length + 40);
+      if (!author && !READ_HINT.test(near)) continue;
+      out.push({ title, author: author || null, where, subject: subject || null, quote: body.slice(0, 160).trim() });
+    }
+    return out;
+  }
+
+  function buildEvidence(o) {
+    const { parsed, setuk, behavior, subjectNotes, ctx } = o;
+    const actGroups = ACT_KEYS.map(([k, label]) => ({ label, lines: parsed[k] || [] })).filter(g => g.lines.length);
+
+    /* ① 활동 속 독서 — 창체 + 세특만 */
+    const books = [];
+    actGroups.forEach(g => g.lines.forEach(l => books.push(...findBooks(l, g.label))));
+    Object.entries(subjectNotes).forEach(([sub, lines]) =>
+      (lines || []).forEach(l => books.push(...findBooks(l, '세부능력 및 특기사항', sub))));
+    const seen = new Set();
+    const uniqueBooks = books.filter(b => { const k = b.title; if (seen.has(k)) return false; seen.add(k); return true; });
+
+    /* ② 계열 적합성 — 창체·세특 서술에서 희망 계열·학과 키워드가 걸린 문장 */
+    const target = ctx.program || ctx.major || {};
+    const kws = [...new Set([].concat(
+      target.diagnosisKeywords || [],
+      (ctx.major && ctx.major.diagnosisKeywords) || [],
+      (target.coreSubjects || []).map(x => String(x).replace(/[ⅠⅡⅢ]|\s/g, '')),
+      target.name ? [String(target.name).replace(/(학과|과|계열)$/, '')] : [],
+    ))].filter(x => x && x.length >= 2);
+    const fitLines = [];
+    const pushFit = (line, where, subject) => {
+      const hits = kws.filter(k => line.includes(k));
+      if (!hits.length) return;
+      fitLines.push({ text: line.slice(0, 220).trim(), where, subject: subject || null, hits: [...new Set(hits)].slice(0, 5) });
+    };
+    actGroups.forEach(g => g.lines.forEach(l => pushFit(l, g.label)));
+    Object.entries(subjectNotes).forEach(([sub, lines]) =>
+      (lines || []).forEach(l => pushFit(l, '세부능력 및 특기사항', sub)));
+    fitLines.sort((a, b) => b.hits.length - a.hits.length || b.text.length - a.text.length);
+
+    /* ③ 공동체 역량 — 대표 서술 셋. 구체적인(길고 신호가 많은) 문장을 고른다 */
+    const commSrc = [];
+    actGroups.forEach(g => g.lines.forEach(l => commSrc.push({ text: l, where: g.label })));
+    (behavior || []).forEach(l => commSrc.push({ text: l, where: '행동특성 및 종합의견' }));
+    Object.entries(subjectNotes).forEach(([sub, lines]) =>
+      (lines || []).forEach(l => commSrc.push({ text: l, where: '세부능력 및 특기사항', subject: sub })));
+    const community = commSrc.map(x => {
+      const c = count(x.text, COMMUNITY);
+      return { ...x, hits: c.hits.slice(0, 5), n: c.n };
+    }).filter(x => x.n)
+      .sort((a, b) => b.n - a.n || b.text.length - a.text.length)
+      .filter((x, i, arr) => arr.findIndex(y => y.text.slice(0, 24) === x.text.slice(0, 24)) === i)
+      .slice(0, 3)
+      .map(x => ({ text: x.text.slice(0, 220).trim(), where: x.where, subject: x.subject || null, hits: x.hits }));
+
+    return {
+      books: uniqueBooks.slice(0, 12),
+      fit: fitLines.slice(0, 8),
+      fitKeywords: kws.slice(0, 12),
+      community,
+      excluded: {
+        reading: (parsed.reading || []).length,
+        award: (parsed.award || []).length,
+        note: '독서활동상황 칸과 수상경력은 대입에 반영되지 않아 근거에서 제외했습니다.',
+      },
+      sources: actGroups.map(g => `${g.label} ${g.lines.length}줄`).concat(
+        setuk.length ? [`세특 ${setuk.length}줄`] : [], (behavior || []).length ? ['행동특성 ' + behavior.length + '줄'] : []),
+    };
+  }
+
   function diagnose(parsed, ctx) {
     const major = ctx.major || {};
     const rec = major.recommendedSubjects || [];
     const kw = major.diagnosisKeywords || [];
     const all = Object.values(parsed).flat().join('\n');
     const setuk = parsed.setuk || [];
-    const acts = (parsed.autonomy || []).concat(parsed.club || [], parsed.careerAct || [], parsed.service || []);
+    const acts = (parsed.activity || []).concat(parsed.autonomy || [], parsed.club || [], parsed.careerAct || [], parsed.service || []);
     const reading = parsed.reading || [];
     const behavior = parsed.behavior || [];
 
@@ -226,6 +326,7 @@
       },
       axes, context, deepen,
       subjectNotes,
+      evidence: buildEvidence({ parsed, setuk, behavior, subjectNotes, ctx }),
     };
   }
 

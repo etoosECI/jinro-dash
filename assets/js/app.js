@@ -1838,7 +1838,7 @@
 
     const parsed = Record.splitSections(text);
     const diag = Record.diagnose(parsed, {
-      school: S.school, track: S.track, major: S.major,
+      school: S.school, track: S.track, major: S.major, program: S.program,
       taken: [...S.taken], chosen: [...S.selected],
       entryGrade: S.profile.entryGrade, research: S.research,
       knownSubjects: [...knownSubjects],

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "4.0",
-  "updatedAt": "2026-10",
+  "updatedAt": "2026-11",
   "sido": [
     {
       "name": "서울특별시",
@@ -138,6 +138,25 @@
               "name": "과천외국어고등학교",
               "type": "특목고(외국어고)",
               "path": "schools/gyeonggi/gwacheon/gyeonggi-gwacheon-gwacheon.json",
+              "hasAchievement": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "충청권",
+      "dir": "chungcheong",
+      "sigungu": [
+        {
+          "name": "대전 유성구",
+          "dir": "daejeon-yuseong",
+          "schools": [
+            {
+              "schoolId": "chungcheong-daejeon-yuseong",
+              "name": "유성여자고등학교",
+              "type": "일반고",
+              "path": "schools/chungcheong/daejeon-yuseong/chungcheong-daejeon-yuseong.json",
               "hasAchievement": true
             }
           ]

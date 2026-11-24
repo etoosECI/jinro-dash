@@ -565,5 +565,93 @@
     };
   }
 
-  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, SECTIONS };
+  /* ---------- 9) 교과 성적 엑셀 양식 (내려받기 · 올리기) ----------
+     생기부 표를 못 읽는 경우가 있어, 직접 채워 넣는 길을 함께 둔다.
+     엔진(SheetJS)은 저장소에 포함한다 — 망에서 CDN이 막혀도 동작해야 한다. */
+  const XLSX_SRC = 'assets/vendor/xlsx/xlsx.mini.min.js';
+  let xlsxPromise = null;
+  function loadXlsx() {
+    if (xlsxPromise) return xlsxPromise;
+    xlsxPromise = (async () => {
+      await loadScript(abs(XLSX_SRC));
+      if (!global.XLSX) throw new Error('엑셀 모듈을 불러오지 못했습니다. assets/vendor/xlsx 폴더가 함께 업로드됐는지 확인해 주세요.');
+      return global.XLSX;
+    })();
+    xlsxPromise.catch(() => { xlsxPromise = null; });
+    return xlsxPromise;
+  }
+
+  const GRADE_COLS = ['학년', '학기', '교과', '과목', '이수단위', '원점수', '과목평균', '표준편차', '성취도', '수강자수', '석차등급'];
+  const COL_KEY = { 학년: 'grade', 학기: 'semester', 교과: 'area', 과목: 'subject', 이수단위: 'credits',
+    원점수: 'rawScore', 과목평균: 'mean', 표준편차: 'stdev', 성취도: 'achievement', 수강자수: 'takers', 석차등급: 'rank' };
+
+  /* 내려받을 양식 — 이미 읽은 성적이 있으면 그 값을 채워서 준다 */
+  async function gradeWorkbook(rows) {
+    const XLSX = await loadXlsx();
+    const body = (rows && rows.length ? rows : [
+      { grade: 1, semester: 1, area: '국어', subject: '공통국어1', credits: 4, rawScore: 92, mean: 71.2, stdev: 12.3, achievement: 'A', takers: 312, rank: 2 },
+      { grade: 1, semester: 1, area: '수학', subject: '공통수학1', credits: 4, rawScore: 88, mean: 65.4, stdev: 14.1, achievement: 'B', takers: 312, rank: 3 },
+    ]).map(r => GRADE_COLS.map(c => {
+      const v = r[COL_KEY[c]];
+      return v == null ? '' : v;
+    }));
+    const aoa = [GRADE_COLS, ...body];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [6, 6, 10, 18, 8, 8, 9, 9, 8, 9, 9].map(w => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '교과성적');
+    return { XLSX, wb };
+  }
+
+  async function downloadGradeTemplate(rows, filename) {
+    const { XLSX, wb } = await gradeWorkbook(rows);
+    /* XLSX.writeFile에 맡기면 브라우저에 따라 파일 이름이 'download'로 떨어진다.
+       직접 Blob을 만들어 이름을 지정한다. */
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename || '교과성적_양식.xlsx';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
+
+  /* 올린 엑셀·CSV → 성적 행 */
+  async function readGradeFile(file) {
+    const XLSX = await loadXlsx();
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheet = wb.Sheets['교과성적'] || wb.Sheets[wb.SheetNames[0]];
+    if (!sheet) throw new Error('시트를 찾지 못했습니다.');
+    const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+    if (!aoa.length) throw new Error('내용이 비어 있습니다.');
+    /* 머리글 줄을 찾는다 — 사람이 위에 메모를 적어 두는 일이 흔하다 */
+    let h = aoa.findIndex(r => (r || []).some(c => String(c).replace(/\s/g, '') === '과목'));
+    if (h < 0) h = 0;
+    const head = (aoa[h] || []).map(c => String(c).replace(/\s/g, ''));
+    const idx = {};
+    GRADE_COLS.forEach(c => { const i = head.indexOf(c.replace(/\s/g, '')); if (i >= 0) idx[COL_KEY[c]] = i; });
+    if (idx.subject == null) throw new Error('"과목" 열을 찾지 못했습니다. 내려받은 양식의 머리글을 그대로 두고 값만 채워 주세요.');
+    const num = v => { const t = String(v == null ? '' : v).trim(); return t === '' ? null : (isNaN(Number(t)) ? null : Number(t)); };
+    const rows = [];
+    for (let i = h + 1; i < aoa.length; i++) {
+      const r = aoa[i] || [];
+      const subject = String(r[idx.subject] == null ? '' : r[idx.subject]).trim();
+      if (!subject) continue;
+      const ach = String(r[idx.achievement] == null ? '' : r[idx.achievement]).trim().toUpperCase();
+      rows.push({
+        grade: num(r[idx.grade]) || 1,
+        semester: num(r[idx.semester]) === 2 ? 2 : 1,
+        area: AREA_FIX[String(r[idx.area] == null ? '' : r[idx.area]).replace(/\s/g, '')] || String(r[idx.area] == null ? '' : r[idx.area]).trim() || '기타',
+        subject,
+        credits: num(r[idx.credits]), rawScore: num(r[idx.rawScore]), mean: num(r[idx.mean]), stdev: num(r[idx.stdev]),
+        achievement: /^[A-E]$/.test(ach) ? ach : null,
+        takers: num(r[idx.takers]), rank: num(r[idx.rank]),
+      });
+    }
+    if (!rows.length) throw new Error('과목이 하나도 없습니다. "과목" 열에 과목명을 적어 주세요.');
+    return rows;
+  }
+
+  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, downloadGradeTemplate, readGradeFile, GRADE_COLS, SECTIONS };
 })(window);

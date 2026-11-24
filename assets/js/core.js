@@ -8,7 +8,7 @@
   /* 배포 버전 — 올릴 때마다 이 값을 바꾸면 브라우저가 들고 있던 옛 파일을 버린다.
      (index.html의 ?v= 값과 같게 유지할 것. 예전에 새 학과를 올렸는데
       캐시 때문에 화면에 안 나타난 적이 있다.) */
-  const VERSION = '5.2';
+  const VERSION = '5.4';
 
   /* ---------- DOM 헬퍼 ---------- */
   const $ = (sel, root) => (root || document).querySelector(sel);

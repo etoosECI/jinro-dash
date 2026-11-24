@@ -9,7 +9,8 @@
   /* ---------------- 상태 ---------------- */
   const S = {
     profile: null,
-    grades: null,       // 생기부에서 읽은 교과 성적 { source, at, rows[] }
+    grades: null,       // 교과 성적 { source, at, rows[] }
+    gradeFail: null,    // 성적을 못 읽었을 때, 성적줄처럼 보였던 줄들
     regions: null,
     school: null,       // 현재 학교 상세 JSON
     track: null,        // 현재 과정
@@ -1540,79 +1541,151 @@
   }
 
   /* ---------- 교과 성적 (생기부 표에서 읽고, 사람이 검수) ---------- */
+  /* ---------- 교과 성적 (생기부에서 읽기 · 엑셀로 직접 입력 · 화면에서 수정) ---------- */
   function readGradesFrom(text) {
     const rows = Record.parseGrades(text);
     if (!rows.length) {
-      if (!S.grades) banner('warn', '교과 성적표는 읽지 못했습니다.',
-        '세특 진단은 그대로 됩니다. 성적이 필요하면 생기부의 "교과학습발달상황" 표 부분을 아래 칸에 함께 붙여넣고 다시 [진단 실행]을 눌러 주세요. ' +
-        '한 줄이 「학기 교과 과목 이수단위 원점수/과목평균(표준편차) 성취도(수강자수) 석차등급」 모양이면 읽습니다. ' +
-        '예) 1 국어 공통국어1 4 92/71.2(12.3) A(312) 2',
-        { replaceKey: 'grades' });
+      if (!S.grades) {
+        /* 왜 못 읽었는지 보이게 — 성적줄처럼 생긴 줄을 그대로 모아 둔다 */
+        S.gradeFail = String(text || '').split(/\r?\n/)
+          .map(x => x.replace(/\s+/g, ' ').trim())
+          .filter(x => /\d\s*\/\s*\d/.test(x) && /[가-힣]/.test(x))
+          .slice(0, 6);
+        renderGrades();
+        banner('warn', '교과 성적표는 읽지 못했습니다.',
+          '세특 진단은 정상입니다. 아래 상자에서 엑셀 양식을 내려받아 채워 올리거나, 표에 직접 입력할 수 있습니다.',
+          { replaceKey: 'grades' });
+      }
       return;
     }
+    S.gradeFail = null;
     S.grades = { source: '생기부 교과학습발달상황', at: Core.nowKST(), rows };
     persist('성적 읽기', `${rows.length}과목`);
     renderGrades();
     banner('warn', `교과 성적 ${rows.length}과목을 읽었습니다.`,
-      '아래 표에서 등급·원점수·이수단위가 맞는지 확인하고 고쳐 주세요. 잘못 읽은 줄은 삭제하면 됩니다. 이 성적이 전문가 과정 상담 진단실의 교과 경쟁력 분석에 그대로 쓰입니다.',
+      '아래 표에서 등급·원점수·이수단위가 맞는지 확인하고 고쳐 주세요. 잘못 읽은 줄은 삭제하면 됩니다. 이 성적이 상담 진단실의 교과 경쟁력 분석에 그대로 쓰입니다.',
       { replaceKey: 'grades' });
   }
+
+  function setGrades(rows, source) {
+    S.gradeFail = null;
+    S.grades = { source: source || '직접 입력', at: Core.nowKST(), rows };
+    persist('성적 입력', `${rows.length}과목`);
+    renderGrades();
+  }
+
+  const EMPTY_ROW = () => ({ grade: 1, semester: 1, area: '', subject: '', credits: null,
+    rawScore: null, mean: null, stdev: null, achievement: null, takers: null, rank: null });
 
   function renderGrades() {
     const box = $('#gradeBox'); if (!box) return;
     const rows = (S.grades && S.grades.rows) || [];
-    if (!rows.length) { box.hidden = true; box.innerHTML = ''; return; }
-    const sum = Record.summarizeGrades(rows);
-    const n = v => (v == null ? '–' : v);
+    const fail = S.gradeFail;
+    if (!rows.length && !fail) { box.hidden = true; box.innerHTML = ''; return; }
     box.hidden = false;
-    box.innerHTML =
-      `<div class="sec-title">읽어 온 교과 성적 <span class="note" style="text-transform:none">— 확인하고 고쳐 주세요</span></div>
-       <p class="note">출처: ${esc(S.grades.source)} · ${esc(S.grades.at)} · ${rows.length}과목 ·
-         전 과목 평균 등급 <b>${n(sum.overallRank)}</b> · 이수단위 합 <b>${sum.totalCredits}</b></p>
-       <div style="overflow:auto;margin-top:10px">
-       <table class="ach-table"><thead><tr>
-         <th>학년</th><th>학기</th><th>교과</th><th>과목</th><th>단위</th><th>원점수</th><th>과목평균</th><th>성취도</th><th>등급</th><th></th>
-       </tr></thead><tbody>` +
-      rows.map((r, i) => `<tr data-gi="${i}">
-         <td><input class="gin" style="width:3em" data-gk="grade" value="${esc(r.grade)}"></td>
-         <td><input class="gin" style="width:3em" data-gk="semester" value="${esc(r.semester)}"></td>
-         <td><input class="gin" style="width:6em" data-gk="area" value="${esc(r.area || '')}"></td>
-         <td><input class="gin" style="width:11em" data-gk="subject" value="${esc(r.subject || '')}"></td>
-         <td><input class="gin" style="width:3.5em" data-gk="credits" value="${esc(r.credits ?? '')}"></td>
-         <td><input class="gin" style="width:4.5em" data-gk="rawScore" value="${esc(r.rawScore ?? '')}"></td>
-         <td><input class="gin" style="width:4.5em" data-gk="mean" value="${esc(r.mean ?? '')}"></td>
-         <td><input class="gin" style="width:3.5em" data-gk="achievement" value="${esc(r.achievement ?? '')}"></td>
-         <td><input class="gin" style="width:3.5em" data-gk="rank" value="${esc(r.rank ?? '')}"></td>
-         <td><button class="btn ghost sm" type="button" data-gdel="${i}">삭제</button></td></tr>`).join('') +
-      `</tbody></table></div>
-       <div class="btnrow" style="margin-top:10px">
-         <button class="btn sm" id="gradeSave" type="button">수정 내용 저장</button>
-         <button class="btn sm ghost" id="gradeClear" type="button">성적 전체 지우기</button>
-       </div>
-       <p class="note">교과별 요약: ` +
-      ['국어', '수학', '영어', '사회', '과학'].map(a => {
-        const b = sum.byArea[a];
-        return `${a} ${b.rank == null ? '–' : b.rank}등급/${b.credits}단위`;
-      }).join(' · ') +
-      (sum.spread != null ? ` · 교과 간 격차 <b>${sum.spread}등급</b>` : '') + '</p>';
 
-    const num = v => { const t = String(v).trim(); return t === '' ? null : (isNaN(Number(t)) ? t : Number(t)); };
+    const tools = `<div class="btnrow" style="margin-top:10px;flex-wrap:wrap">
+        <button class="btn sm ghost" id="gradeTpl" type="button">⬇ 엑셀 양식 내려받기</button>
+        <button class="btn sm ghost" id="gradeUp" type="button">⬆ 엑셀·CSV 올리기</button>
+        <button class="btn sm ghost" id="gradeAdd" type="button">＋ 과목 직접 추가</button>
+        ${rows.length ? '<button class="btn sm" id="gradeSave" type="button">수정 내용 저장</button>' : ''}
+        ${rows.length ? '<button class="btn sm ghost" id="gradeClear" type="button">성적 전체 지우기</button>' : ''}
+        <input type="file" id="gradeFile" accept=".xlsx,.xls,.csv" hidden>
+      </div>`;
+
+    let html = '';
+    if (fail) {
+      html += `<div class="sec-title">교과 성적을 읽지 못했습니다</div>
+        <p class="note">세특 진단은 정상입니다. 성적만 못 읽었습니다.
+          생기부에서 바로 읽으려면 한 줄이 <b>「학기 교과 과목 이수단위 원점수/과목평균(표준편차) 성취도(수강자수) 석차등급」</b> 모양이어야 합니다.<br>
+          예) <code>1 국어 공통국어1 4 92/71.2(12.3) A(312) 2</code></p>`
+        + (fail.length
+          ? `<p class="note" style="margin-top:8px">붙여넣은 내용에서 <b>성적줄처럼 보이는 줄</b>입니다. 모양이 다르면 그대로 알려 주세요.</p>
+             <pre style="white-space:pre-wrap;font-size:13px;line-height:1.7;padding:10px;border-radius:8px;background:rgba(127,127,127,.12);overflow:auto">${fail.map(esc).join('\n')}</pre>`
+          : `<p class="note" style="margin-top:8px"><b>성적줄처럼 보이는 줄을 찾지 못했습니다.</b> 교과학습발달상황 표가 빠졌거나 스캔본일 수 있습니다.</p>`)
+        + `<p class="note" style="margin-top:10px"><b>엑셀로 직접 넣으셔도 됩니다.</b>
+             [엑셀 양식 내려받기] → 엑셀에서 성적을 채워 저장 → [엑셀·CSV 올리기].
+             한두 과목이면 [과목 직접 추가]로 표에 바로 적는 게 빠릅니다.</p>`;
+    }
+
+    if (rows.length) {
+      const sum = Record.summarizeGrades(rows);
+      const n = v => (v == null ? '–' : v);
+      html += `<div class="sec-title"${fail ? ' style="margin-top:18px"' : ''}>교과 성적 <span class="note" style="text-transform:none">— 확인하고 고쳐 주세요</span></div>
+        <p class="note">출처: ${esc(S.grades.source)} · ${esc(S.grades.at)} · ${rows.length}과목 ·
+          전 과목 평균 등급 <b>${n(sum.overallRank)}</b> · 이수단위 합 <b>${sum.totalCredits}</b></p>
+        <div style="overflow:auto;margin-top:10px">
+        <table class="ach-table"><thead><tr>
+          <th>학년</th><th>학기</th><th>교과</th><th>과목</th><th>단위</th><th>원점수</th><th>과목평균</th><th>표준편차</th><th>성취도</th><th>수강자수</th><th>등급</th><th></th>
+        </tr></thead><tbody>`
+        + rows.map((r, i) => `<tr data-gi="${i}">`
+          + [['grade', 3], ['semester', 3], ['area', 6], ['subject', 11], ['credits', 3.5],
+             ['rawScore', 4.5], ['mean', 4.5], ['stdev', 4.5], ['achievement', 3.5], ['takers', 4.5], ['rank', 3.5]]
+            .map(([k, w]) => `<td><input class="gin" style="width:${w}em" data-gk="${k}" value="${esc(r[k] == null ? '' : r[k])}"></td>`).join('')
+          + `<td><button class="btn ghost sm" type="button" data-gdel="${i}">삭제</button></td></tr>`).join('')
+        + `</tbody></table></div>`
+        + `<p class="note" style="margin-top:8px">교과별 요약: `
+        + ['국어', '수학', '영어', '사회', '과학'].map(a => {
+            const b = sum.byArea[a];
+            return `${a} ${b.rank == null ? '–' : b.rank}등급/${b.credits}단위`;
+          }).join(' · ')
+        + (sum.spread != null ? ` · 교과 간 격차 <b>${sum.spread}등급</b>` : '') + '</p>';
+    } else {
+      html += `<p class="note" style="margin-top:10px">아직 입력된 성적이 없습니다.</p>`;
+    }
+
+    box.innerHTML = html + tools;
+
+    /* --- 표 수정 --- */
+    const toNum = v => { const t = String(v).trim(); return t === '' ? null : (isNaN(Number(t)) ? t : Number(t)); };
     $$('#gradeBox .gin').forEach(inp => {
       inp.onchange = () => {
         const i = Number(inp.closest('tr').dataset.gi), k = inp.dataset.gk;
-        S.grades.rows[i][k] = (k === 'area' || k === 'subject' || k === 'achievement') ? inp.value.trim() : num(inp.value);
+        S.grades.rows[i][k] = ['area', 'subject', 'achievement'].includes(k) ? inp.value.trim() : toNum(inp.value);
       };
     });
     $$('#gradeBox [data-gdel]').forEach(b => {
       b.onclick = () => { S.grades.rows.splice(Number(b.dataset.gdel), 1); persist('성적 수정', '행 삭제'); renderGrades(); };
     });
-    $('#gradeSave').onclick = () => {
+
+    /* --- 양식 내려받기 / 올리기 / 직접 추가 --- */
+    $('#gradeTpl').onclick = async () => {
+      try {
+        await Record.downloadGradeTemplate(rows, rows.length ? '교과성적_확인용.xlsx' : '교과성적_양식.xlsx');
+        banner('info', '엑셀 양식을 내려받았습니다.',
+          '머리글은 그대로 두고 값만 채운 뒤 [엑셀·CSV 올리기]로 올려 주세요. 한 줄이 한 과목입니다.', { replaceKey: 'grades' });
+      } catch (e) { banner('err', '엑셀 양식을 만들지 못했습니다', e.message); }
+    };
+    const fileIn = $('#gradeFile');
+    $('#gradeUp').onclick = () => fileIn.click();
+    fileIn.onchange = async () => {
+      const f = fileIn.files[0]; if (!f) return;
+      try {
+        const got = await Record.readGradeFile(f);
+        setGrades(got, `직접 입력 (${f.name})`);
+        banner('info', `${got.length}과목을 읽었습니다.`, '아래 표에서 값을 확인하고 필요하면 바로 고치세요.', { replaceKey: 'grades' });
+      } catch (e) { banner('err', '엑셀 파일을 읽지 못했습니다', e.message); }
+      fileIn.value = '';
+    };
+    $('#gradeAdd').onclick = () => {
+      const list = rows.slice();
+      const last = list[list.length - 1];
+      const r = EMPTY_ROW();
+      if (last) { r.grade = last.grade; r.semester = last.semester; }
+      list.push(r);
+      setGrades(list, S.grades ? S.grades.source : '직접 입력');
+      const inputs = $$('#gradeBox tbody tr:last-child .gin');
+      if (inputs[3]) inputs[3].focus();
+    };
+    if ($('#gradeSave')) $('#gradeSave').onclick = () => {
       S.grades.at = Core.nowKST(); persist('성적 수정', `${S.grades.rows.length}과목`); renderGrades();
       banner('info', '교과 성적을 저장했습니다.', '상담 진단실에서 이 값을 그대로 가져갑니다.', { replaceKey: 'grades' });
     };
-    $('#gradeClear').onclick = () => {
-      if (!confirm('읽어 온 교과 성적을 모두 지울까요?')) return;
-      S.grades = null; if (S.profile) S.profile.grades = null; persist('성적 삭제', ''); renderGrades();
+    if ($('#gradeClear')) $('#gradeClear').onclick = () => {
+      if (!confirm('입력한 교과 성적을 모두 지울까요?')) return;
+      S.grades = null; S.gradeFail = null;
+      if (S.profile) S.profile.grades = null;
+      persist('성적 삭제', ''); renderGrades();
     };
   }
 

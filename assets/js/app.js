@@ -766,22 +766,23 @@
       : '학기 배치는 학교 운영에 따라 달라질 수 있는 <b>권장안</b>입니다. 실제 개설은 STEP 2의 편제표를 따릅니다.';
 
     if (S.program && S.track) {
-      const core = new Set((S.program.coreSubjects || []).map(normSub));
-      const rec = new Set((S.program.recommendedSubjects || []).map(normSub));
+      const core = keySet(S.program.coreSubjects || []);
+      const rec = keySet(S.program.recommendedSubjects || []);
       const phases = (S.track.phases || []).filter(p => (p.options || []).length);
       if (!phases.length) { host.appendChild(el('p', { class: 'note', text: '이 학교의 편제 데이터가 없습니다.' })); return; }
       let any = false;
       phases.forEach(p => {
         const t = el('div', { class: 'term' });
         t.appendChild(el('h4', { text: (p.grade ? p.grade + '학년' : p.label) + (p.requiredPickCount ? ` · 택${p.requiredPickCount}` : '') }));
-        const cs = (p.options || []).filter(o => core.has(normSub(o.subject)));
-        const rs = (p.options || []).filter(o => rec.has(normSub(o.subject)));
+        const cs = (p.options || []).filter(o => hasSub(core, o.subject));
+        const rs = (p.options || []).filter(o => !hasSub(core, o.subject) && hasSub(rec, o.subject));
         cs.forEach(o => { any = true; t.appendChild(el('span', { class: 'pill rec', style: 'border-color:var(--warn);color:var(--warn);font-weight:700', text: '★ ' + o.subject })); });
         rs.forEach(o => { any = true; t.appendChild(el('span', { class: 'pill rec', text: o.subject })); });
         if (!cs.length && !rs.length) t.appendChild(el('span', { class: 'note', text: '이 구간에 개설된 권장 과목 없음' }));
         host.appendChild(t);
       });
-      const missing = (S.program.coreSubjects || []).filter(x => !offeredSet().has(normSub(x)));
+      const offered0 = offeredSet();
+      const missing = (S.program.coreSubjects || []).filter(x => !hasSub(offered0, x));
       const note = el('p', { class: 'note', style: 'grid-column:1/-1;margin-top:4px' });
       note.innerHTML = `<b>★ 표시가 ${esc(S.program.name)} 핵심 과목</b>입니다. ` +
         (any ? '' : '내 학교 편제에 이 학과의 권장 과목이 개설되어 있지 않습니다. ') +
@@ -843,13 +844,13 @@
   }
   /* 아직 확보되지 않은 권장 과목 */
   function missingRec() {
-    const have = new Set([...S.selected, ...S.taken].map(normSub));
-    return wantedSubjects().filter(t => !have.has(normSub(t)));
+    const have = keySet([...S.selected, ...S.taken]);
+    return wantedSubjects().filter(t => !hasSub(have, t));
   }
   /* 학교에 개설되어 있는 권장 과목만 (미개설은 학생 책임이 아니다) */
   function offeredSet() {
     const set = new Set();
-    ((S.track && S.track.phases) || []).forEach(p => (p.options || []).forEach(o => set.add(normSub(o.subject))));
+    ((S.track && S.track.phases) || []).forEach(p => (p.options || []).forEach(o => subKeys(o.subject).forEach(k => set.add(k))));
     return set;
   }
   /* ---------- 설계 컨텍스트 ----------
@@ -890,14 +891,46 @@
     .replace(/[ⅠⅡⅢ]/g, m => ({ 'Ⅰ': 'I', 'Ⅱ': 'II', 'Ⅲ': 'III' }[m]))
     .replace(/[·ㆍ]/g, '');
 
+  /* ---------- 2015 ↔ 2022 과목 대응 ----------
+     학과의 핵심·권장 과목은 전부 2022 개정 과목명으로 적혀 있다.
+     2015 개정 편제(현 3학년)를 고르면 '미적분Ⅱ'도 '화학 반응의 세계'도 그 학교엔 없고,
+     같은 성격의 '미적분'·'화학Ⅱ'가 개설돼 있는데도 권장 과목이 0개로 잡혔다.
+     data/subject-map-2015.json 의 대응표로 두 이름을 같은 과목으로 취급한다.
+     ★ 어느 교육과정인지 가리는 '편제 대조'(checkCurriculum)에는 쓰지 않는다 —
+       거기서는 이름이 서로 달라야 구분이 된다. */
+  let SUBJ_ALIAS = new Map();      // 정규화 과목명 → Set(대응 그룹 id)
+  function buildSubjectAlias(pairs) {
+    const m = new Map();
+    (pairs || []).forEach((p, i) => {
+      const gid = '@' + i;
+      [p.y2022, ...(p.y2015 || [])].filter(Boolean).map(normSub).forEach(n => {
+        if (!m.has(n)) m.set(n, new Set());
+        m.get(n).add(gid);
+      });
+    });
+    SUBJ_ALIAS = m;
+  }
+  /* 한 과목이 가지는 열쇠들 — 자기 이름 + 속한 대응 그룹 */
+  function subKeys(x) {
+    const n = normSub(x);
+    const out = [n];
+    (SUBJ_ALIAS.get(n) || []).forEach(g => out.push(g));
+    return out;
+  }
+  function keySet(list) {
+    const s = new Set();
+    (list || []).forEach(x => subKeys(x).forEach(k => s.add(k)));
+    return s;
+  }
+  const hasSub = (set, x) => subKeys(x).some(k => set.has(k));
+
   /* 권장 등급 — 'core' 핵심 | 'rec' 권장 | null 해당 없음
      ★ 학과를 골랐으면 학과의 과목 목록만 본다.
        계열 목록을 그대로 통과시키면 기계공학과에 생명과학이, 의예과에 전자기와 양자가 권장된다. */
   function recLevel(subject) {
-    const n = normSub(subject);
     if (S.program) {
-      if ((S.program.coreSubjects || []).some(x => normSub(x) === n)) return 'core';
-      if ((S.program.recommendedSubjects || []).some(x => normSub(x) === n)) return 'rec';
+      if (hasSub(keySet(S.program.coreSubjects || []), subject)) return 'core';
+      if (hasSub(keySet(S.program.recommendedSubjects || []), subject)) return 'rec';
       /* 여기서 키워드 부분 문자열로 한 번 더 건지지 않는다.
          '국어'가 "중국어"에, '수학'이 "경제 수학"에 걸려 학과와 무관한 과목이 권장된다.
          목록에 없는 좋은 과목은 학생이 직접 고르면 되고, 재설계 안내가 따라붙는다. */
@@ -1161,11 +1194,11 @@
 
     /* 권장 일치도 — 내 학교에 개설된 권장 과목만 분모로 삼는다 */
     const offered = offeredSet();
-    const have = new Set([...S.selected, ...S.taken].map(normSub));
-    const wanted = wantedSubjects().filter(t => offered.has(normSub(t)));
-    const hit = wanted.filter(t => have.has(normSub(t)));
-    const coreList = (S.program && S.program.coreSubjects || []).filter(t => offered.has(normSub(t)));
-    const coreHit = coreList.filter(t => have.has(normSub(t)));
+    const have = keySet([...S.selected, ...S.taken]);
+    const wanted = wantedSubjects().filter(t => hasSub(offered, t));
+    const hit = wanted.filter(t => hasSub(have, t));
+    const coreList = (S.program && S.program.coreSubjects || []).filter(t => hasSub(offered, t));
+    const coreHit = coreList.filter(t => hasSub(have, t));
     $('#recMatch').innerHTML = ctx()
       ? (S.program
           ? `★ 핵심 과목 <b class="${coreHit.length >= coreList.length ? 'ok' : 'warnc'}">${coreHit.length} / ${coreList.length}</b>` +
@@ -2212,12 +2245,17 @@
 
     initStart();
     initRecord();
-    await Promise.all([initSchool(), initMajor(), loadResearch(), loadReference()]);
+    await Promise.all([initSchool(), initMajor(), loadSubjectMap(), loadResearch(), loadReference()]);
     applyEntry(2);
     renderGapBanners();
     go('start');
   }
 
+  async function loadSubjectMap() {
+    /* 없거나 깨져도 앱은 그대로 돌아간다 — 대응 없이 정확 일치만 하게 된다 */
+    const data = await loadJSON('subject-map-2015.json', { schema: { pairs: '배열' } });
+    buildSubjectAlias(data && data.pairs);
+  }
   async function loadResearch() {
     S.research = await loadJSON('research/subjects.json', { schema: { subjects: '객체' } });
   }

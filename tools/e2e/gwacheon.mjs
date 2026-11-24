@@ -24,7 +24,8 @@ async function run({ trackIdx, field, programText, entry, tag, first }) {
   await page.waitForTimeout(400);
 
   await page.click(`#entrySeg button[data-entry="${entry}"]`);
-  await page.fill('#idInput', '과천-' + tag);
+  await page.check('#nameConsent');
+  await page.fill('#nameInput', '과천-' + tag);
   await page.click('#toSchool');
   await page.waitForTimeout(400);
 

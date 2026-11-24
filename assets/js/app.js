@@ -373,7 +373,11 @@
   /* ---------- 학점배당표 편제 (공통과목 포함 전체 · 프로토타입에서 가져온 장점) ---------- */
   function renderCreditPlan() {
     const host = $('#creditPlan'); host.innerHTML = '';
-    const cp = S.school && S.school.creditPlan;
+    let cp = S.school && S.school.creditPlan;
+    /* 교육과정이 두 벌인 학교(2022·2015)는 지금 고른 과정에 맞는 배당표를 보여 준다 */
+    if (cp && cp.alt && S.track && S.track.curriculum && S.track.curriculum !== '2022') {
+      cp = { ...cp, source: cp.alt.source || cp.source, byGrade: cp.alt.byGrade, note: cp.alt.label };
+    }
     if (!cp || !cp.byGrade) {
       host.appendChild(el('p', { class: 'note', html: '이 학교의 <b>학점배당표</b> 데이터가 <span class="badge none">미입력</span>입니다. 위의 학년·학기별 선택과목 편제만 표시합니다.' }));
       return;
@@ -1689,6 +1693,88 @@
     };
   }
 
+  /* ---------- 교육과정 세대 비교 (2022 vs 2015) ----------
+     한 학교에 편제가 두 벌인 경우가 있다(2022 개정 신입생 / 2015 개정 현 3학년).
+     업로드한 학생부의 과목이 어느 쪽 편제와 맞는지 세어 보고, 다르면 알려 준다. */
+  function trackSubjectSet(track) {
+    const set = new Set();
+    (track.phases || []).forEach(p => (p.options || []).forEach(o => set.add(normSub(o.subject))));
+    const cp = S.school && S.school.creditPlan;
+    const plan = (track.curriculum && track.curriculum !== '2022' && cp && cp.alt) ? cp.alt.byGrade : (cp && cp.byGrade);
+    Object.values(plan || {}).forEach(arr => (arr || []).forEach(x => set.add(normSub(x.subject))));
+    return set;
+  }
+
+  /* 학생부에 '적힌 그대로'의 과목명 — 세특 「과목」 + 교과 성적표의 과목명.
+     진단이 학교 편제에 맞춰 보정한 이름을 쓰면 대조가 그 편제 쪽으로 기운다. */
+  function recordSubjectNames() {
+    const out = [];
+    if (Record.rawSubjects) out.push(...Record.rawSubjects(rawText || ''));
+    ((S.grades && S.grades.rows) || []).forEach(r => { if (r && r.subject) out.push(String(r.subject)); });
+    return out;
+  }
+
+  function checkCurriculum() {
+    const old = $('#currMatch'); if (old) old.remove();
+    const tracks = (S.school && S.school.tracks) || [];
+    if (tracks.length < 2 || !tracks.some(t => t.curriculum)) return;
+
+    const raw = [...new Set(recordSubjectNames())].filter(Boolean);
+    const sets = tracks.map(t => ({ track: t, set: trackSubjectSet(t) }));
+    /* 어느 편제에도 없는 이름(동아리명 등)은 판단 근거에서 뺀다 */
+    const subs = raw.filter(x => sets.some(s => s.set.has(normSub(x))));
+    if (subs.length < 3) return;
+
+    const scored = sets.map(s => {
+      const names = subs.filter(x => s.set.has(normSub(x)));
+      /* 양쪽 모두에 있는 과목(공통국어 등)은 구분에 도움이 안 되므로 따로 센다 */
+      const only = names.filter(x => sets.every(o => o === s || !o.set.has(normSub(x))));
+      return { track: s.track, hit: names.length, only: only.length, names, onlyNames: only };
+    }).sort((a, b) => (b.only - a.only) || (b.hit - a.hit));
+
+    const best = scored[0], cur = scored.find(x => x.track.trackId === (S.track && S.track.trackId));
+    const host = $('#diagBox');
+    if (!host) return;
+    const box = el('div', { class: 'redesign', style: 'margin-top:16px' });
+    const line = scored.map(x =>
+      `<b>${esc(x.track.curriculum ? x.track.curriculum + ' 개정' : x.track.label)}</b> ${x.hit}과목(그 과정에만 있는 과목 ${x.only}개)`).join(' · ');
+    const tie = scored.length > 1 && best.only === scored[1].only;
+    const same = !cur || cur.track.trackId === best.track.trackId;
+    box.innerHTML =
+      `<h4>교육과정 편제 대조</h4>
+       <p class="note">학생부에 적힌 과목 ${subs.length}개를 이 학교의 두 편제와 맞춰 봤습니다 — ${line}.</p>` +
+      (tie
+        ? `<p class="note">두 편제에 모두 있는 과목만 확인돼 어느 과정인지 가릴 수 없습니다.
+             지금은 <b>${esc((cur || best).track.label)}</b> 기준으로 봅니다 — 아래 '개설 과정'에서 직접 고르셔도 됩니다.</p>`
+        : same
+          ? `<p class="note">지금 고른 <b>${esc((cur || best).track.label)}</b> 편제와 맞습니다.</p>`
+          : `<p class="note" style="color:var(--accent)"><b>지금 고른 과정과 다릅니다.</b>
+               현재 <b>${esc(cur.track.label)}</b>(그 과정에만 있는 과목 ${cur.only}개)보다
+               <b>${esc(best.track.label)}</b>(${best.only}개)에 더 맞습니다.
+               이 학생은 그쪽 교육과정일 가능성이 큽니다.</p>`) +
+      (best.onlyNames.length
+        ? `<p class="note">${esc(best.track.curriculum || '')} 과정에만 있는 과목: ${esc(best.onlyNames.slice(0, 12).join(', '))}${best.onlyNames.length > 12 ? ' 외' : ''}</p>`
+        : '') +
+      (best.names.length ? `<p class="note">편제에서 찾은 과목: ${esc(best.names.slice(0, 14).join(', '))}${best.names.length > 14 ? ' 외' : ''}</p>` : '');
+
+    if (!same && !tie) {
+      const btn = el('button', { class: 'btn sm', type: 'button', text: `${best.track.label}로 바꾸기`, style: 'margin-top:8px' });
+      btn.onclick = () => {
+        const t = (S.school.tracks || []).find(x => x.trackId === best.track.trackId);
+        if (!t) return;
+        S.track = t; if (S.profile) S.profile.trackId = t.trackId;
+        renderTracks(t.trackId); renderCurriculum(); renderCreditPlan();
+        if (S.major) rebuildSelectionForCareer(t.label);
+        persist('과정 변경', t.label);
+        banner('info', `${t.label} 편제로 바꿨습니다.`, '② 내 학교 화면의 편제표와 ⑤ 과목 설계가 이 과정 기준으로 다시 그려집니다.', { replaceKey: 'curr' });
+        checkCurriculum();
+      };
+      box.appendChild(btn);
+    }
+    box.id = 'currMatch';
+    host.appendChild(box);
+  }
+
   function analyze() {
     const text = Record.mask($('#recText').value || '');
     const n = text.trim().length;
@@ -1734,6 +1820,7 @@
     });
     persist('생기부 진단', `영역 ${diag.counts.sections.length}개 · 과목 ${diag.counts.subjects.length}개 인식 · 보완점 ${(diag.gaps || []).length}건`);
     renderDiagnosis();
+    checkCurriculum();
     renderGapBanners();
     if (S.track) renderBuilder();
   }

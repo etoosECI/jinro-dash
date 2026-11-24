@@ -26,7 +26,8 @@ const initialSchoolFetches = reqs.filter(u => u.startsWith('schools/'));
 
 // 2학년 진입 경로
 await page.click('#entrySeg button[data-entry="2"]');
-await page.fill('#idInput', '점검-g2');
+await page.check('#nameConsent');
+await page.fill('#nameInput', '점검-g2');
 await page.click('#toSchool');
 await page.waitForTimeout(300);
 

@@ -54,6 +54,24 @@
     return out;
   }
 
+  /* 기록에 적힌 그대로의 과목명만 뽑는다 (「과목」·<과목> 형태).
+     어느 편제의 과목인지 판단할 때는 이 '날것'을 써야 한다 —
+     학교 편제에 맞춰 보정한 이름을 쓰면 판단이 그 편제 쪽으로 기운다. */
+  const BRACKET_SUB = /[「『<＜【\[]\s*([가-힣][가-힣A-Za-zⅠⅡⅢ0-9·ㆍ\s]{1,19})\s*[」』>＞】\]]/g;
+  function rawSubjects(text) {
+    const out = new Set();
+    String(text || '').split(/\r?\n/).forEach(raw => {
+      const line = raw.trim();
+      let m;
+      BRACKET_SUB.lastIndex = 0;
+      while ((m = BRACKET_SUB.exec(line))) {
+        const s = m[1].replace(/\s+/g, ' ').trim();
+        if (s.length >= 2 && !/^\d+$/.test(s)) out.add(s);
+      }
+    });
+    return [...out];
+  }
+
   /* ---------- 3) 과목별 세특 추출 ---------- */
   /* 「과목」, <과목>, (과목), '과목:' 형태를 모두 시도 */
   function extractSubjectNotes(sectionLines, knownSubjects) {
@@ -75,9 +93,11 @@
       if (matched) {
         // 정확히 일치하는 과목명을 최우선으로 잡는다.
         // (그렇지 않으면 「물리학」이 "고급 물리학"으로 잘못 흡수된다)
+        /* ★ 기록에 없는 과목명을 만들어 내지 않는다.
+           「독서」를 '독서 토론과 글쓰기'로 넓혀 잡으면 2015 과정 학생부가
+           2022 과목을 이수한 것처럼 보인다 — 적힌 이름을 그대로 쓴다. */
         const norm = subj.find(s => s === matched)
           || subj.find(s => matched.includes(s))
-          || subj.find(s => s.includes(matched))
           || matched;
         current = norm;
         notes[current] = notes[current] || [];
@@ -653,5 +673,5 @@
     return rows;
   }
 
-  global.Record = { mask, splitSections, extractSubjectNotes, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, downloadGradeTemplate, readGradeFile, GRADE_COLS, SECTIONS };
+  global.Record = { mask, splitSections, extractSubjectNotes, rawSubjects, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, downloadGradeTemplate, readGradeFile, GRADE_COLS, SECTIONS };
 })(window);

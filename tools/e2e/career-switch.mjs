@@ -13,7 +13,8 @@ const dump = async (label) => {
 };
 await p.goto('http://localhost:8899/', { waitUntil:'networkidle' });
 await p.waitForTimeout(400);
-await p.click('#entrySeg button[data-entry="2"]'); await p.fill('#idInput','전환-점검');
+await p.click('#entrySeg button[data-entry="2"]'); await p.check('#nameConsent');
+await p.fill('#nameInput', '전환-점검');
 await p.click('#toSchool'); await p.waitForTimeout(300);
 await p.fill('#schoolSearch','단국대사대부고'); await p.waitForTimeout(450);
 await p.click('#acList button'); await p.waitForTimeout(700);

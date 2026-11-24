@@ -15,7 +15,8 @@ await page.waitForTimeout(600);
 
 // STEP 1
 await page.click('#entrySeg button[data-entry="3"]');   // 3학년 진입 (분기 검증)
-await page.fill('#idInput', '테스트-a1b2');
+await page.check('#nameConsent');
+await page.fill('#nameInput', '테스트-a1b2');
 await shot('01-start');
 await page.click('#toSchool');
 await page.waitForTimeout(300);

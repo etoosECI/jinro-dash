@@ -127,7 +127,8 @@ await page.click('#steps button[data-step="report"]');
 await page.waitForTimeout(600);
 await shot('11-report');
 const reportH2 = await page.locator('#report h2').count();
-const histRows = await page.locator('#hist div').count();
+/* 진행 이력 란은 v5.9에서 없앴다 — 리포트에 축별 강점·보완점이 들어가면서 역할이 겹쳤다 */
+const axisLabels = await page.locator('#report .axlabel').count();
 
 // 이어하기(저장 검증)
 await page.click('#saveBtn');
@@ -150,7 +151,7 @@ console.log(JSON.stringify({
   credits, recMatch: (recMatch||'').trim(),
   gapTagsInBuilder: gapTags, gapBannerDesign, manualChips,
   inquiryCards: inqCards, topicRotated: firstTopic !== secondTopic && !!secondTopic,
-  reportSections: reportH2, historyRows: histRows,
+  reportSections: reportH2, axisLabels,
   resumedSchool: (resumedSchool||'').trim(), resumedSelected: resumedSel,
   errors: errs,
 }, null, 2));

@@ -57,8 +57,12 @@
       host.innerHTML = '<p class="note">분석 데이터를 불러오는 중…</p>';
       V.data = await loadJSON('snu-analysis.json', { schema: { schools: '배열', findings: '배열', framework: '객체' } });
       if (!V.data) { host.innerHTML = '<p class="note">서울대 분석 데이터를 불러오지 못했습니다.</p>'; return; }
-      build(host);
     }
+    /* ★ 화면을 짓는 조건을 '데이터가 없을 때'로 두면 안 된다.
+       리포트(STEP 6)가 ensure()로 데이터만 먼저 불러오면 V.data가 채워지고,
+       그 뒤 STEP 7에 들어와도 build()가 건너뛰어져 화면이 통째로 비어 버렸다.
+       지어졌는지는 화면 자체로 판단한다. */
+    if (!host.firstElementChild || !$('#snuMine')) build(host);
     renderMine();
   }
 

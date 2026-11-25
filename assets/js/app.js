@@ -67,6 +67,8 @@
     S.step = step;
     STEP_ORDER.forEach(s => { const n = $('#p-' + s); if (n) n.hidden = s !== step; });
     refreshSteps();
+    /* 진단을 건너뛰고 설계로 바로 와도, 저장된 학생부의 이수 과목은 반영되어야 한다 */
+    if (step === 'design' && S.sections && !S.sections.applied) applyRecordSubjects();
     if (step === 'report') renderReport();
     if (step === 'snu' && window.SnuAnalysis) window.SnuAnalysis.render(S);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2101,6 +2103,55 @@
       '아래 [읽어 들인 기록 확인·수정]에서 잘못 들어간 칸을 고친 뒤 [저장하고 다시 진단]을 눌러 주세요.', { replaceKey: 'recread' });
   }
 
+  /* 학교 편제(선택과목 + 학점배당표)에 있는 과목이면 그 '정확한 표기'를 돌려준다 */
+  function schoolSubjectName(name) {
+    const n = normSub(name);
+    let hit = null;
+    ((S.school && S.school.tracks) || []).forEach(t => (t.phases || []).forEach(p =>
+      (p.options || []).forEach(o => { if (!hit && subKeys(o.subject).includes(n)) hit = o.subject; })));
+    if (!hit && S.school && S.school.creditPlan) {
+      Object.values(S.school.creditPlan.byGrade || {}).flat()
+        .forEach(x => { if (!hit && subKeys(x.subject).includes(n)) hit = x.subject; });
+      const alt = S.school.creditPlan.alt;
+      if (!hit && alt) Object.values(alt.byGrade || {}).flat()
+        .forEach(x => { if (!hit && subKeys(x.subject).includes(n)) hit = x.subject; });
+    }
+    if (!hit) ((S.school && S.school.professionalSubjects) || [])
+      .forEach(x => { if (!hit && subKeys(x.name).includes(n)) hit = x.name; });
+    return hit;
+  }
+
+  /* ★ 학생부에 적힌 과목은 '학생이 실제로 이수한 과목'이다.
+     학교 편제에 있으면 이수 과목으로 체크하고, 편제에 없으면
+     공동교육과정·온라인학교·전문교과로 들은 것으로 보아 직접 추가 과목에 넣는다.
+     그러지 않으면 고급 생명과학처럼 학교 밖에서 이수한 과목이 설계에서 통째로 사라진다. */
+  function applyRecordSubjects(opts) {
+    const sec = S.sections;
+    if (!sec || !S.school) return { added: [], taken: [] };
+    const names = [...new Set(Record.sectionSubjects(sec))].filter(Boolean);
+    const added = [], taken = [];
+    names.forEach(raw => {
+      const name = String(raw).trim();
+      if (!name || name.length > 24) return;
+      const real = schoolSubjectName(name);
+      if (real) {
+        if (!S.selected.has(real) && !S.taken.has(real)) { S.taken.add(real); taken.push(real); }
+      } else if (!S.manual.some(x => normSub(x) === normSub(name))) {
+        S.manual.push(name); S.selected.add(name); added.push(name);
+      }
+    });
+    sec.applied = true;
+    if (added.length || taken.length) {
+      if (S.track) renderBuilder();
+      persist('학생부 이수 과목 반영', [taken.length ? `편제 과목 ${taken.length}개 이수 표시` : '', added.length ? `학교 밖 이수 ${added.length}개 추가` : ''].filter(Boolean).join(' · '));
+      if (!(opts && opts.quiet)) banner('info', '학생부에 적힌 과목을 설계에 반영했습니다.',
+        (taken.length ? `이수 표시: ${taken.slice(0, 6).join(', ')}${taken.length > 6 ? ' 외' : ''}. ` : '') +
+        (added.length ? `학교 편제에 없어 공동교육과정·전문교과 이수로 넣었습니다: ${added.slice(0, 6).join(', ')}${added.length > 6 ? ' 외' : ''}. 아니면 ⑤ 설계에서 지우세요.` : ''),
+        { replaceKey: 'recsub' });
+    }
+    return { added, taken };
+  }
+
   /* 저장된 칸으로 진단한다 — 분석의 근거는 언제나 '사람이 확인한 내용' */
   function runDiagnosis() {
     const sec = S.sections;
@@ -2127,6 +2178,7 @@
     persist('생기부 진단', `영역 ${diag.counts.sections.length}개 · 과목 ${diag.counts.subjects.length}개 인식 · 보완점 ${(diag.gaps || []).length}건`);
     renderDiagnosis();
     checkCurriculum();
+    applyRecordSubjects();
     renderGapBanners();
     if (S.track) renderBuilder();
   }

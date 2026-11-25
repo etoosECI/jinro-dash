@@ -46,7 +46,8 @@
       manualSubjects: [],        // 공동교육과정·전문교과 등 직접 추가한 과목
       programId: null,           // 세부 학과 (선택)
       topicIdx: {},              // 과목별 탐구 주제 로테이션 위치
-      record: null,              // { consent, guardianConsent, rawStored, summary, diagnosis, at }
+      record: null,              // { consent, guardianConsent, rawStored, sections, summary, diagnosis, at }
+                                 //   sections = 사람이 확인·저장한 생기부 칸 (분석의 근거)
       history: [],
       createdAt: Core.nowKST(),
       updatedAt: Core.nowKST(),

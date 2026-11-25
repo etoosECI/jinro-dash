@@ -63,6 +63,231 @@
     return out;
   }
 
+
+  /* ---------- 2-b) 생기부를 '칸'으로 읽어 들인다 ----------
+     실제 학교생활기록부는 글이 아니라 '표'입니다. 한 줄이
+       1  자율·자치활동  34  학급 1인 1역으로 …
+     처럼 [학년][영역][시간][내용] 순서로 붙어 나옵니다.
+     그래서 '자율활동:' 같은 말머리를 찾는 방식으로는 읽히지 않습니다.
+     여기서는 줄 앞의 학년·영역·시간을 떼어 내고 내용만 남겨
+     영역별·과목별·학년별로 나눠 담습니다.
+
+     ★ 읽은 결과는 화면에서 사람이 고칠 수 있어야 합니다(app.js).
+       파서는 '초안'을 만들 뿐이고, 분석의 근거가 되는 것은 사람이 저장한 결과입니다. */
+
+  const ACT_ALIAS = [
+    { area: '자율활동',   re: /^(자율\s*[·ㆍ‧∙]?\s*자치\s*활동|자율\s*활동|자치\s*[·ㆍ‧∙]?\s*적응\s*활동|자율\s*[·ㆍ‧∙]?\s*자치)/ },
+    { area: '동아리활동', re: /^(동아리\s*활동|학술\s*[·ㆍ‧∙]?\s*문화\s*및\s*여가\s*활동)/ },
+    { area: '봉사활동',   re: /^(봉사\s*활동\s*실적|봉사\s*활동)/ },
+    { area: '진로활동',   re: /^(진로\s*[·ㆍ‧∙]?\s*직업\s*활동|진로\s*활동|진로\s*탐색\s*활동)/ },
+  ];
+  const ACT_ORDER = ['자율활동', '동아리활동', '봉사활동', '진로활동'];
+
+  const BIG_HEAD = [
+    { key: 'award',    re: /^수상\s*경력/ },
+    { key: 'career',   re: /^진로\s*희망/ },
+    { key: 'activity', re: /^창의적\s*체험\s*활동/ },
+    { key: 'subjectHead', re: /^교과\s*학습\s*발달\s*상황/ },
+    { key: 'setuk',    re: /^(세부\s*능력\s*(및|,)?\s*특기\s*사항|세특)/ },
+    { key: 'reading',  re: /^독서\s*활동/ },
+    { key: 'behavior', re: /^(행동\s*특성\s*(및|,)?\s*종합\s*의견|행특)/ },
+  ];
+
+  /* 줄 앞의 '6.' '②' '■' 같은 장식과 번호를 떼어 낸다 */
+  const deco = s => String(s || '').replace(/^[\s\d]{0,4}[.)]\s*/, '').replace(/^[■□◆◇●○▶▷※*\-–—]\s*/, '').trim();
+
+  const GRADE_MARK = /^[\(\[（【<〈]?\s*([1-3])\s*학년\s*[\)\]）】>〉]?\s*$/;
+  const SEM_MARK   = /^[\(\[（【<〈]?\s*([1-2])\s*학기\s*[\)\]）】>〉]?\s*$/;
+  const SEM_PREFIX = /^[\(\[（【<〈]?\s*([1-2])\s*학기\s*[\)\]）】>〉]?\s*/;
+  const GRADE_PREFIX = /^[\(\[（【<〈]?\s*([1-3])\s*학년\s*[\)\]）】>〉]?\s*/;
+  /* 성적표 행 — 88/71.2(14.3) 같은 꼴이 있으면 세특이 아니라 점수표다 */
+  const SCORE_ROW = /\d{1,3}\s*\/\s*\d{1,3}(\.\d+)?|\d\s*등급\s*$|성취도\s*\(/;
+  /* 표 머리글 */
+  const TABLE_HEAD = /^(학년|학기)?\s*(영역|교과|과목|시간|특기\s*사항|학점수|원점수|성취도|석차\s*등급|이수\s*시간|창의적)/;
+
+  function cleanBody(s) {
+    return String(s || '')
+      .replace(/^\(?\s*\d{1,3}\s*시간\s*\)?\s*/, '')   // 앞에 남은 '(30시간)'
+      .replace(/^\(?\s*\d{1,3}\s*\)?\s+/, '')          // 앞에 남은 시간 숫자
+      .trim();
+  }
+
+  /* 세특 과목명으로 쓸 만한가 — 문장이 아니라 이름처럼 보이는가 */
+  function looksLikeSubject(s, known) {
+    const t = String(s || '').trim();
+    if (!t || t.length < 2 || t.length > 20) return false;
+    if (/[.,。!?]/.test(t)) return false;
+    if (/(함|음|임|됨|있음|이다|한다)$/.test(t)) return false;
+    if (SEM_MARK.test(t) || GRADE_MARK.test(t)) return false;
+    if (/^(세부\s*능력|특기\s*사항|영역|교과|과목|비고|구분)/.test(t)) return false;
+    if ((known || []).some(k => k === t)) return true;
+    if ((t.match(/\s/g) || []).length > 3) return false;
+    return /^[가-힣]/.test(t);
+  }
+
+  const SUBJ_BRACKET = /^[「『<＜【]\s*([^」』>＞】]{2,20})\s*[」』>＞】]\s*[:：]?\s*(.*)$/;
+  const SUBJ_COLON   = /^([^:：]{2,20})\s*[:：]\s*(.+)$/;
+
+  let _uid = 0;
+  const uid = () => 'r' + (++_uid) + '-' + Math.random().toString(36).slice(2, 6);
+
+  function parseRecord(text, knownSubjects) {
+    const known = knownSubjects || [];
+    const out = { activities: [], setuk: [], behavior: [], reading: [], award: [], dropped: [] };
+    const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+    let zone = '_etc';          // award | activity | setuk | reading | behavior | subjectHead | _etc
+    let grade = '', sem = '';
+    let curAct = null, curSetuk = null, curBeh = null;
+
+    const pushAct = (area, g, body) => {
+      body = cleanBody(body);
+      curAct = { id: uid(), area, grade: g || grade || '', text: body };
+      out.activities.push(curAct);
+      curSetuk = curBeh = null;
+    };
+    const pushSetuk = (subject, g, s, body) => {
+      curSetuk = { id: uid(), grade: g || grade || '', semester: s || sem || '', subject, text: cleanBody(body) };
+      out.setuk.push(curSetuk);
+      curAct = curBeh = null;
+    };
+    const pushBeh = (g, body) => {
+      curBeh = { id: uid(), grade: g || grade || '', text: cleanBody(body) };
+      out.behavior.push(curBeh);
+      curAct = curSetuk = null;
+    };
+
+    for (const raw of lines) {
+      const line = deco(raw);
+      if (!line) continue;
+
+      /* ① 큰 영역 머리글 */
+      const head = line.length <= 40 && BIG_HEAD.find(h => h.re.test(line));
+      if (head) {
+        zone = head.key;
+        if (head.key === 'subjectHead' || head.key === 'setuk') sem = sem || '';
+        curAct = curSetuk = curBeh = null;
+        continue;
+      }
+      /* ② 학년·학기 표시 줄 */
+      let m;
+      if ((m = line.match(GRADE_MARK))) { grade = m[1]; curAct = curSetuk = curBeh = null; continue; }
+      if ((m = line.match(SEM_MARK)))   { sem = m[1]; curSetuk = null; continue; }
+      /* ③ 표 머리글은 버린다 */
+      if (line.length <= 40 && TABLE_HEAD.test(line) && !/[.]/.test(line)) { out.dropped.push(line); continue; }
+
+      /* ④ 창의적 체험활동 표 행 — [학년] 영역 [시간] 내용 */
+      let rest = line, g2 = '';
+      const gm = rest.match(/^([1-3])\s+(?=[가-힣])/);
+      if (gm) { g2 = gm[1]; rest = rest.slice(gm[0].length); }
+      const act = ACT_ALIAS.find(a => a.re.test(rest));
+      if (act) {
+        if (g2) grade = g2;
+        zone = 'activity';
+        pushAct(act.area, grade, rest.replace(act.re, ''));
+        continue;
+      }
+
+      /* ⑤ 세특 */
+      if (zone === 'setuk' || zone === 'subjectHead') {
+        if (SCORE_ROW.test(line)) { out.dropped.push(line); continue; }   // 성적표 행
+        let body = line, g3 = '', s3 = '';
+        const gp = body.match(GRADE_PREFIX); if (gp) { g3 = gp[1]; body = body.slice(gp[0].length); }
+        const sp = body.match(SEM_PREFIX);   if (sp) { s3 = sp[1]; body = body.slice(sp[0].length); }
+        if (g3) grade = g3;
+        if (s3) sem = s3;
+        if (!body) continue;
+
+        let mb = body.match(SUBJ_BRACKET);
+        if (mb && looksLikeSubject(mb[1], known)) { pushSetuk(mb[1].trim(), grade, sem, mb[2]); continue; }
+        let mc = body.match(SUBJ_COLON);
+        if (mc && looksLikeSubject(mc[1], known)) { pushSetuk(mc[1].trim(), grade, sem, mc[2]); continue; }
+        if (curSetuk) { curSetuk.text = (curSetuk.text + ' ' + body).trim(); continue; }
+        /* 과목을 못 가린 줄 — 버리지 않고 '과목 미상'으로 남겨 사람이 고치게 한다 */
+        pushSetuk('', grade, sem, body);
+        continue;
+      }
+
+      /* ⑥ 행동특성 및 종합의견 */
+      if (zone === 'behavior') {
+        let body = line, g4 = '';
+        const bm = body.match(/^([1-3])\s+(?=[가-힣])/);
+        if (bm) { g4 = bm[1]; body = body.slice(bm[0].length); }
+        const gp = body.match(GRADE_PREFIX); if (gp) { g4 = gp[1]; body = body.slice(gp[0].length); }
+        if (g4) grade = g4;
+        if (curBeh && !g4) { curBeh.text = (curBeh.text + ' ' + body).trim(); continue; }
+        pushBeh(grade, body);
+        continue;
+      }
+
+      /* ⑦ 독서활동상황 · 수상경력 — 분석에서는 쓰지 않지만 읽은 것은 보여 준다 */
+      if (zone === 'reading') {
+        let body = line; const gp = body.match(GRADE_PREFIX); if (gp) { grade = gp[1]; body = body.slice(gp[0].length); }
+        out.reading.push({ id: uid(), grade, text: body }); continue;
+      }
+      if (zone === 'award') { out.award.push({ id: uid(), grade, text: line }); continue; }
+
+      /* ⑧ 창의적 체험활동 구획 안에서 영역 없이 이어지는 줄 */
+      if (zone === 'activity' && curAct) { curAct.text = (curAct.text + ' ' + cleanBody(line)).trim(); continue; }
+
+      out.dropped.push(line);
+    }
+
+    /* 빈 칸 정리 */
+    out.activities = out.activities.filter(x => x.text);
+    out.setuk = out.setuk.filter(x => x.text);
+    out.behavior = out.behavior.filter(x => x.text);
+    return out;
+  }
+
+  /* 저장된 '칸'을 진단 엔진이 읽는 구획 모양으로 되돌린다.
+     세특은 「과목명」을 앞에 붙여, 과목 귀속이 사람이 확인한 그대로가 되게 한다. */
+  function sectionsToParsed(sec) {
+    const p = { _etc: [] };
+    SECTIONS.forEach(s => { p[s.key] = []; });
+    const AREA_KEY = { 자율활동: 'autonomy', 동아리활동: 'club', 봉사활동: 'service', 진로활동: 'careerAct' };
+    (sec.activities || []).forEach(a => {
+      const k = AREA_KEY[a.area] || 'activity';
+      p[k].push(a.text);
+    });
+    (sec.setuk || []).forEach(x => {
+      p.setuk.push((x.subject ? `「${x.subject}」 ` : '') + x.text);
+    });
+    (sec.behavior || []).forEach(x => p.behavior.push(x.text));
+    (sec.reading || []).forEach(x => p.reading.push(x.text));
+    (sec.award || []).forEach(x => p.award.push(x.text));
+    return p;
+  }
+
+  /* 저장된 칸에서 과목 이름만 모은다 — 세특 귀속에 그대로 쓴다 */
+  const sectionSubjects = sec => [...new Set((sec.setuk || []).map(x => x.subject).filter(Boolean))];
+
+  /* 사람이 읽을 수 있는 한 덩어리 글로 되돌린다 (리포트·전달용) */
+  function sectionsToText(sec) {
+    const L = [];
+    const byArea = {};
+    (sec.activities || []).forEach(a => { (byArea[a.area] = byArea[a.area] || []).push(a); });
+    if (Object.keys(byArea).length) {
+      L.push('창의적 체험활동상황');
+      ACT_ORDER.forEach(area => (byArea[area] || []).forEach(a =>
+        L.push(`${area}${a.grade ? `(${a.grade}학년)` : ''}: ${a.text}`)));
+    }
+    if ((sec.setuk || []).length) {
+      L.push('', '세부능력 및 특기사항');
+      sec.setuk.forEach(x => L.push(
+        `${x.grade ? `(${x.grade}학년` : '('}${x.semester ? ` ${x.semester}학기` : ''}) 「${x.subject || '과목 미상'}」 ${x.text}`));
+    }
+    if ((sec.behavior || []).length) {
+      L.push('', '행동특성 및 종합의견');
+      sec.behavior.forEach(x => L.push(`${x.grade ? `${x.grade}학년: ` : ''}${x.text}`));
+    }
+    if ((sec.reading || []).length) {
+      L.push('', '독서활동상황');
+      sec.reading.forEach(x => L.push(`${x.grade ? `(${x.grade}학년) ` : ''}${x.text}`));
+    }
+    return L.join('\n');
+  }
+
   /* 기록에 적힌 그대로의 과목명만 뽑는다 (「과목」·<과목> 형태).
      어느 편제의 과목인지 판단할 때는 이 '날것'을 써야 한다 —
      학교 편제에 맞춰 보정한 이름을 쓰면 판단이 그 편제 쪽으로 기운다. */
@@ -774,5 +999,5 @@
     return rows;
   }
 
-  global.Record = { mask, splitSections, extractSubjectNotes, rawSubjects, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, downloadGradeTemplate, readGradeFile, GRADE_COLS, SECTIONS };
+  global.Record = { mask, splitSections, parseRecord, sectionsToParsed, sectionsToText, sectionSubjects, ACT_ORDER, extractSubjectNotes, rawSubjects, diagnose, readFile, ocrFile, tidyOcr, parseGrades, summarizeGrades, downloadGradeTemplate, readGradeFile, GRADE_COLS, SECTIONS };
 })(window);

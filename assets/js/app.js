@@ -11,6 +11,7 @@
     profile: null,
     grades: null,       // 교과 성적 { source, at, rows[] }
     gradeFail: null,    // 성적을 못 읽었을 때, 성적줄처럼 보였던 줄들
+    sections: null,     // 읽어 들인 생기부 칸 { activities[], setuk[], behavior[], reading[], award[], dropped[] }
     regions: null,
     school: null,       // 현재 학교 상세 JSON
     track: null,        // 현재 과정
@@ -141,6 +142,7 @@
         S.taken = new Set(S.profile.takenSubjects || []);
         S.manual = (S.profile.manualSubjects || []).slice();
         S.grades = S.profile.grades || null;
+        S.sections = (S.profile.record && S.profile.record.sections) || null;
       }
       S.profile.studentName = name;
       S.profile.nameConsent = true;
@@ -174,7 +176,9 @@
       S.topicIdx = p.topicIdx || {};
       S.diagnosis = (p.record && p.record.diagnosis) || null;
       S.grades = p.grades || null;
+      S.sections = (p.record && p.record.sections) || null;
       renderGrades();
+      renderRecordEditor();
       banner('info', `'${p.studentName || id}' 학생을 불러왔습니다.`, p.schoolName ? `학교: ${p.schoolName}` : '');
       if (p.schoolPath) await selectSchoolByPath(p.schoolPath, p.trackId);
       if (p.majorId) await selectMajor(p.majorId, { restoring: true });
@@ -1506,6 +1510,7 @@
     file.onchange = () => { if (file.files[0]) handleFile(file.files[0]); };
 
     $('#clearRecBtn').onclick = () => { $('#recText').value = ''; rawText = ''; $('#diagBox').hidden = true; };
+    /* 읽은 내용은 입력칸을 지워도 남는다 — 지우려면 확인·수정 패널의 [읽은 내용 전체 지우기] */
     $('#analyzeBtn').onclick = analyze;
     $('#toReport').onclick = () => go('report');
     $('#skipRecord').onclick = () => go('report');
@@ -1742,6 +1747,7 @@
      진단이 학교 편제에 맞춰 보정한 이름을 쓰면 대조가 그 편제 쪽으로 기운다. */
   function recordSubjectNames() {
     const out = [];
+    if (S.sections) out.push(...Record.sectionSubjects(S.sections));
     if (Record.rawSubjects) out.push(...Record.rawSubjects(rawText || ''));
     ((S.grades && S.grades.rows) || []).forEach(r => { if (r && r.subject) out.push(String(r.subject)); });
     return out;
@@ -1808,16 +1814,222 @@
     host.appendChild(box);
   }
 
+  /* ---------- 읽어 들인 기록 확인·수정 ----------
+     순서: ① 붙여넣기·업로드 → ② 자동으로 칸 나누기 → ③ 화면에서 확인·수정
+          → ④ 저장 → ⑤ 저장본으로 진단 → ⑥ 설계·리포트·진단실로 전달
+     ★ 분석의 근거는 '사람이 저장한 내용'입니다. 자동 분리는 초안일 뿐입니다. */
+
+  function knownSubjectSet() {
+    const set = new Set();
+    (S.track ? S.track.phases : []).forEach(p => (p.options || []).forEach(o => set.add(o.subject)));
+    Object.keys((S.research && S.research.subjects) || {}).forEach(s => set.add(s));
+    ['국어', '수학', '영어', '통합사회', '통합과학', '한국사', '과학탐구실험', '확률과 통계', '미적분', '문학', '독서와 작문', '대수']
+      .forEach(s => set.add(s));
+    (S.school && S.school.creditPlan ? Object.values(S.school.creditPlan.byGrade || {}) : [])
+      .forEach(arr => (arr || []).forEach(x => set.add(x.subject)));
+    return [...set];
+  }
+
+  const blankRow = extra => Object.assign({ id: 'n' + Date.now() + Math.random().toString(36).slice(2, 5), text: '' }, extra);
+
+  /* 원문 → 칸 (초안). 이미 저장된 칸이 있으면 덮어쓸지 묻는다 */
+  function readRecordDraft(text, opts) {
+    const sec = Record.parseRecord(text, knownSubjectSet());
+    sec.at = nowKST();
+    sec.source = (opts && opts.source) || '붙여넣기·파일';
+    sec.saved = false;
+    S.sections = sec;
+    renderRecordEditor();
+    return sec;
+  }
+
+  function sectionCounts(sec) {
+    return `창체 ${(sec.activities || []).length}칸 · 세특 ${(sec.setuk || []).length}과목 · 행동특성 ${(sec.behavior || []).length}칸`
+      + ((sec.reading || []).length ? ` · 독서 ${sec.reading.length}칸` : '')
+      + ((sec.dropped || []).length ? ` · 제외한 줄 ${sec.dropped.length}` : '');
+  }
+
+  function renderRecordEditor() {
+    const host = $('#recEdit');
+    if (!host) return;
+    const sec = S.sections;
+    if (!sec) { host.hidden = true; host.innerHTML = ''; return; }
+    host.hidden = false;
+    host.innerHTML = '';
+
+    host.appendChild(el('div', { class: 'sec-title', text: '읽어 들인 기록 확인·수정' }));
+    host.appendChild(el('p', { class: 'note', html:
+      `자동으로 나눈 <b>초안</b>입니다 — ${esc(sectionCounts(sec))}.
+       잘못 들어간 칸은 여기서 고치세요. <b>[수정 내용 저장]</b>을 누르면 그때부터
+       진단·설계·리포트·전문가 과정이 모두 <b>저장된 내용</b>을 근거로 합니다.
+       <b id="recSaveState" style="color:${sec.saved ? 'var(--ok)' : 'var(--warn)'}">${sec.saved ? `저장됨 (${esc(sec.savedAt || '')})` : '아직 저장하지 않았습니다'}</b>` }));
+
+    /* ① 창의적 체험활동 */
+    const actBox = el('div', { class: 'redesign', style: 'margin-top:14px' });
+    actBox.appendChild(el('h4', { text: '창의적 체험활동 (자율 · 동아리 · 봉사 · 진로)' }));
+    const actWrap = el('div', { class: 'recrows' });
+    (sec.activities || []).forEach(row => actWrap.appendChild(actRowEl(row)));
+    actBox.appendChild(actWrap);
+    const addAct = el('button', { class: 'btn sm ghost', type: 'button', text: '＋ 활동 칸 추가', style: 'margin-top:8px' });
+    addAct.onclick = () => { sec.activities.push(blankRow({ area: '자율활동', grade: '' })); renderRecordEditor(); };
+    actBox.appendChild(addAct);
+    host.appendChild(actBox);
+
+    /* ② 과목별 세부능력 및 특기사항 */
+    const subBox = el('div', { class: 'redesign', style: 'margin-top:14px' });
+    subBox.appendChild(el('h4', { text: '과목별 세부능력 및 특기사항' }));
+    const blanks = (sec.setuk || []).filter(x => !x.subject).length;
+    if (blanks) subBox.appendChild(el('p', { class: 'note', style: 'color:var(--warn)',
+      text: `과목 이름을 가리지 못한 칸이 ${blanks}개 있습니다. 과목명을 채워 주세요 — 비워 두면 그 칸은 과목에 묶이지 않습니다.` }));
+    const subWrap = el('div', { class: 'recrows' });
+    (sec.setuk || []).forEach(row => subWrap.appendChild(setukRowEl(row)));
+    subBox.appendChild(subWrap);
+    const addSub = el('button', { class: 'btn sm ghost', type: 'button', text: '＋ 과목 칸 추가', style: 'margin-top:8px' });
+    addSub.onclick = () => { sec.setuk.push(blankRow({ subject: '', grade: '', semester: '' })); renderRecordEditor(); };
+    subBox.appendChild(addSub);
+    host.appendChild(subBox);
+
+    /* ③ 행동특성 및 종합의견 */
+    const behBox = el('div', { class: 'redesign', style: 'margin-top:14px' });
+    behBox.appendChild(el('h4', { text: '행동특성 및 종합의견' }));
+    const behWrap = el('div', { class: 'recrows' });
+    (sec.behavior || []).forEach(row => behWrap.appendChild(behRowEl(row)));
+    behBox.appendChild(behWrap);
+    const addBeh = el('button', { class: 'btn sm ghost', type: 'button', text: '＋ 칸 추가', style: 'margin-top:8px' });
+    addBeh.onclick = () => { sec.behavior.push(blankRow({ grade: '' })); renderRecordEditor(); };
+    behBox.appendChild(addBeh);
+    host.appendChild(behBox);
+
+    /* ④ 분석에 쓰지 않는 것 */
+    if ((sec.reading || []).length || (sec.award || []).length || (sec.dropped || []).length) {
+      const d = el('details', { style: 'margin-top:14px' });
+      d.appendChild(el('summary', { class: 'note',
+        text: `분석에 쓰지 않는 내용 보기 — 독서활동상황 ${(sec.reading || []).length}칸 · 수상경력 ${(sec.award || []).length}칸 · 표/머리글 등 제외한 줄 ${(sec.dropped || []).length}줄` }));
+      const inner = el('div', { class: 'note', style: 'margin-top:8px;line-height:1.9' });
+      inner.appendChild(el('div', { html: '<b>독서활동상황과 수상경력은 대입에 반영되지 않아 근거에서 뺍니다.</b> 활동 안에서 읽은 책은 창체·세특 칸에 적혀 있어야 읽힙니다.' }));
+      (sec.reading || []).forEach(x => inner.appendChild(el('div', { text: `독서 ${x.grade ? x.grade + '학년 ' : ''}· ${x.text}` })));
+      (sec.award || []).forEach(x => inner.appendChild(el('div', { text: `수상 · ${x.text}` })));
+      (sec.dropped || []).forEach(x => inner.appendChild(el('div', { style: 'color:var(--muted)', text: `제외 · ${x}` })));
+      d.appendChild(inner);
+      host.appendChild(d);
+    }
+
+    /* ⑤ 단추 */
+    const row = el('div', { class: 'btnrow', style: 'margin-top:14px' });
+    const save = el('button', { class: 'btn sm', type: 'button', text: '💾 수정 내용 저장' });
+    save.onclick = () => { saveSections(); };
+    const saveRun = el('button', { class: 'btn sm', type: 'button', text: '저장하고 다시 진단 →' });
+    saveRun.onclick = () => { if (saveSections({ quiet: true })) runDiagnosis(); };
+    const reread = el('button', { class: 'btn sm ghost', type: 'button', text: '원문 다시 읽기' });
+    reread.onclick = () => {
+      if (!$('#recText').value.trim()) return banner('warn', '붙여넣기 칸이 비어 있습니다.', '원문이 있어야 다시 읽을 수 있습니다.');
+      if (S.sections && S.sections.saved && !confirm('저장한 수정 내용이 지워지고 원문에서 다시 읽습니다. 계속할까요?')) return;
+      readRecordDraft(Record.mask($('#recText').value));
+      banner('info', '원문에서 다시 읽었습니다.', '확인 후 [수정 내용 저장]을 눌러 주세요.', { replaceKey: 'recread' });
+    };
+    const drop = el('button', { class: 'btn sm ghost', type: 'button', text: '읽은 내용 전체 지우기' });
+    drop.onclick = () => {
+      if (!confirm('읽어 들인 기록을 전부 지웁니다. 계속할까요?')) return;
+      S.sections = null;
+      if (S.profile && S.profile.record) { delete S.profile.record.sections; }
+      renderRecordEditor();
+      persist('기록 삭제', '읽어 들인 기록을 지웠습니다');
+    };
+    [save, saveRun, reread, drop].forEach(b => row.appendChild(b));
+    host.appendChild(row);
+  }
+
+  function gradeSel(row, key, opts, width) {
+    const s = el('select', { style: `width:${width || 72}px` });
+    s.appendChild(el('option', { value: '', text: '–' }));
+    opts.forEach(v => s.appendChild(el('option', { value: v, text: v })));
+    s.value = row[key] || '';
+    s.onchange = () => { row[key] = s.value; markDirty(); };
+    return s;
+  }
+  function areaSel(row) {
+    const s = el('select', { style: 'width:104px' });
+    (Record.ACT_ORDER || ['자율활동', '동아리활동', '봉사활동', '진로활동']).forEach(v =>
+      s.appendChild(el('option', { value: v, text: v })));
+    s.value = row.area || '자율활동';
+    s.onchange = () => { row.area = s.value; markDirty(); };
+    return s;
+  }
+  function textArea(row) {
+    const t = el('textarea', { rows: 3, style: 'width:100%' });
+    t.value = row.text || '';
+    t.oninput = () => { row.text = t.value; markDirty(); };
+    return t;
+  }
+  function delBtn(list, row) {
+    const b = el('button', { class: 'btn sm ghost', type: 'button', text: '삭제', style: 'white-space:nowrap' });
+    b.onclick = () => { const i = list.indexOf(row); if (i >= 0) list.splice(i, 1); renderRecordEditor(); markDirty(); };
+    return b;
+  }
+  function rowShell(head, body) {
+    const w = el('div', { class: 'recrow' });
+    const h = el('div', { class: 'recrow-h' });
+    head.forEach(x => h.appendChild(x));
+    w.appendChild(h); w.appendChild(body);
+    return w;
+  }
+  const actRowEl = row => rowShell(
+    [areaSel(row), gradeSel(row, 'grade', ['1', '2', '3']), el('span', { class: 'note', text: '학년' }), delBtn(S.sections.activities, row)],
+    textArea(row));
+  function setukRowEl(row) {
+    const name = el('input', { type: 'text', placeholder: '과목명 (예: 공통국어1)', style: 'flex:1;min-width:140px' });
+    name.value = row.subject || '';
+    name.oninput = () => { row.subject = name.value; markDirty(); };
+    return rowShell(
+      [name, gradeSel(row, 'grade', ['1', '2', '3']), el('span', { class: 'note', text: '학년' }),
+        gradeSel(row, 'semester', ['1', '2']), el('span', { class: 'note', text: '학기' }), delBtn(S.sections.setuk, row)],
+      textArea(row));
+  }
+  const behRowEl = row => rowShell(
+    [gradeSel(row, 'grade', ['1', '2', '3']), el('span', { class: 'note', text: '학년' }), delBtn(S.sections.behavior, row)],
+    textArea(row));
+
+  function markDirty() {
+    if (S.sections) S.sections.saved = false;
+    const b = $('#recSaveState');
+    if (b) { b.textContent = '아직 저장하지 않았습니다 — [수정 내용 저장]을 눌러 주세요'; b.style.color = 'var(--warn)'; }
+  }
+
+  function saveSections(opts) {
+    const sec = S.sections;
+    if (!sec) return false;
+    sec.activities = (sec.activities || []).filter(x => (x.text || '').trim());
+    sec.setuk = (sec.setuk || []).filter(x => (x.text || '').trim());
+    sec.behavior = (sec.behavior || []).filter(x => (x.text || '').trim());
+    if (!sec.activities.length && !sec.setuk.length && !sec.behavior.length) {
+      banner('warn', '저장할 내용이 없습니다.', '창의적 체험활동·세특·행동특성 중 하나는 있어야 합니다.');
+      return false;
+    }
+    sec.saved = true; sec.savedAt = nowKST();
+    S.profile.record = Object.assign(S.profile.record || {}, { consent: true, guardianConsent: true, sections: sec });
+    persist('기록 저장', sectionCounts(sec));
+    renderRecordEditor();
+    if (!(opts && opts.quiet)) banner('info', '수정 내용을 저장했습니다.',
+      '이제 진단·설계·리포트·전문가 과정이 모두 이 내용을 근거로 합니다.', { replaceKey: 'recsave' });
+    return true;
+  }
+
+  const textStamp = t => String(t || '').length + '|' + String(t || '').slice(0, 60) + '|' + String(t || '').slice(-60);
+
   function analyze() {
     const text = Record.mask($('#recText').value || '');
     const n = text.trim().length;
-    /* "비어 있음"과 "짧음"은 원인이 다르다 — 섞어서 안내하면 왜 안 되는지 알 수 없다 */
-    if (!n) {
+    const haveSaved = !!(S.sections && (S.sections.activities || []).concat(S.sections.setuk || [], S.sections.behavior || []).length);
+
+    if (!n && !haveSaved) {
       banner('warn', '붙여넣기 칸이 비어 있습니다.',
         '아래 칸에 생기부 내용을 붙여넣거나, 위에서 .txt·.pdf 파일을 올려 주세요. 파일을 올렸는데도 칸이 비어 있다면 그 파일에서 글자를 뽑지 못한 것이니(스캔본 등) 내용을 복사해 붙여넣어 주세요.');
       $('#recText').focus();
       return;
     }
+    /* 원문이 비어 있어도 저장해 둔 기록이 있으면 그것으로 진단한다 */
+    if (!n && haveSaved) { runDiagnosis(); return; }
+
     if (n < 50) {
       banner('warn', `분석할 내용이 너무 짧습니다. (현재 ${n}자 · 최소 50자)`,
         '세특·창체·독서 등 기록을 더 붙여넣어 주세요. 한 과목 세특만으로도 진단은 돌아가지만, 많을수록 정확합니다.');
@@ -1831,23 +2043,47 @@
     /* 세특 진단과 별개로, 교과학습발달상황 표에서 과목 성적을 읽어 둔다.
        전문가 과정 상담 진단실이 이 성적을 가져다 교과 경쟁력을 분석한다. */
     readGradesFrom(text);
-    const knownSubjects = new Set();
-    (S.track ? S.track.phases : []).forEach(p => (p.options || []).forEach(o => knownSubjects.add(o.subject)));
-    Object.keys((S.research && S.research.subjects) || {}).forEach(s => knownSubjects.add(s));
-    ['국어', '수학', '영어', '통합사회', '통합과학', '한국사', '과학탐구실험', '확률과 통계', '미적분', '문학', '독서와 작문', '대수'].forEach(s => knownSubjects.add(s));
 
-    const parsed = Record.splitSections(text);
+    /* ★ 원문이 그대로면 사람이 고친 내용을 덮어쓰지 않는다 */
+    const stamp = textStamp(text);
+    if (haveSaved && S.sections.stamp === stamp) {
+      saveSections({ quiet: true });
+      runDiagnosis();
+      banner('info', '저장된 기록으로 진단했습니다.', '원문에서 다시 읽으려면 아래 [원문 다시 읽기]를 누르세요.', { replaceKey: 'recsave' });
+      return;
+    }
+    if (haveSaved && S.sections.saved && !confirm('원문이 바뀌었습니다. 다시 읽으면 저장한 수정 내용이 사라집니다. 계속할까요?')) {
+      runDiagnosis();
+      return;
+    }
+    const sec = readRecordDraft(text);
+    sec.stamp = stamp;
+    saveSections({ quiet: true });
+    runDiagnosis();
+    banner('info', '기록을 칸으로 나눠 읽었습니다.',
+      '아래 [읽어 들인 기록 확인·수정]에서 잘못 들어간 칸을 고친 뒤 [저장하고 다시 진단]을 눌러 주세요.', { replaceKey: 'recread' });
+  }
+
+  /* 저장된 칸으로 진단한다 — 분석의 근거는 언제나 '사람이 확인한 내용' */
+  function runDiagnosis() {
+    const sec = S.sections;
+    if (!sec) return;
+    const known = new Set(knownSubjectSet());
+    Record.sectionSubjects(sec).forEach(x => known.add(x));
+
+    const parsed = Record.sectionsToParsed(sec);
     const diag = Record.diagnose(parsed, {
       school: S.school, track: S.track, major: S.major, program: S.program,
       taken: [...S.taken], chosen: [...S.selected],
       entryGrade: S.profile.entryGrade, research: S.research,
-      knownSubjects: [...knownSubjects],
+      knownSubjects: [...known],
     });
     S.diagnosis = diag;
     S.profile.record = Object.assign(S.profile.record || {}, {
       consent: true, guardianConsent: true,
       rawStored: !!$('#keepRaw').checked,
-      raw: $('#keepRaw').checked ? text : null,
+      raw: $('#keepRaw').checked ? (rawText || Record.sectionsToText(sec)) : null,
+      sections: sec,
       summary: { chars: diag.counts.chars, sections: diag.counts.sections, subjects: diag.counts.subjects },
       diagnosis: diag, at: nowKST(),
     });

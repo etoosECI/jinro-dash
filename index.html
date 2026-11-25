@@ -9,7 +9,7 @@
      새 학교를 넣으려면 data/schools/... 에 JSON을 추가하고 data/regions.json에 한 줄 등록하세요.
      이 파일은 건드리지 않아도 됩니다. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/app.css?v=5.7">
+<link rel="stylesheet" href="assets/css/app.css?v=5.8">
 </head>
 <body>
 <div class="wrap">
@@ -225,12 +225,13 @@
         <textarea id="recText" placeholder="세부능력 및 특기사항 / 창의적 체험활동 / 독서활동 / 행동특성 및 종합의견 등을 붙여넣으세요."></textarea>
       </div>
       <div class="btnrow">
-        <button class="btn sm" id="analyzeBtn" type="button">진단 실행</button>
+        <button class="btn sm" id="analyzeBtn" type="button">기록 읽기 → 진단</button>
         <button class="btn sm ghost" id="clearRecBtn" type="button">입력 지우기</button>
         <label class="chk" style="margin:0 0 0 8px"><input type="checkbox" id="keepRaw"><span style="font-size:12.5px">원문도 이 브라우저에 저장 (기본 저장 안 함)</span></label>
       </div>
     </div>
 
+    <div id="recEdit" hidden style="margin-top:20px"></div>
     <div id="gradeBox" hidden style="margin-top:20px"></div>
     <div id="diagBox" hidden style="margin-top:20px"></div>
     <div class="btnrow"><button class="btn sm" id="toMajorFromRecord" type="button">보완점 반영해 계열 선택 →</button>
@@ -278,11 +279,11 @@
   </div>
 </div>
 
-<script src="assets/js/core.js?v=5.7"></script>
-<script src="assets/js/store.js?v=5.7"></script>
-<script src="assets/js/record.js?v=5.7"></script>
-<script src="assets/js/bridge.js?v=5.7"></script>
-<script src="assets/js/snu.js?v=5.7"></script>
-<script src="assets/js/app.js?v=5.7"></script>
+<script src="assets/js/core.js?v=5.8"></script>
+<script src="assets/js/store.js?v=5.8"></script>
+<script src="assets/js/record.js?v=5.8"></script>
+<script src="assets/js/bridge.js?v=5.8"></script>
+<script src="assets/js/snu.js?v=5.8"></script>
+<script src="assets/js/app.js?v=5.8"></script>
 </body>
 </html>

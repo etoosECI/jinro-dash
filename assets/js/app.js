@@ -1333,6 +1333,24 @@
     return { topic: chosen, idx: i, len: order.length, area: chosenArea };
   }
 
+  /* 이 과목에 대해 학생부에 실제로 적혀 있는 서술 — 저장본(사람이 확인한 것)을 먼저 본다 */
+  function recordNoteFor(subject) {
+    const n = normSub(subject);
+    const fromSec = ((S.sections && S.sections.setuk) || []).filter(x => x.subject && normSub(x.subject) === n);
+    if (fromSec.length) return fromSec.map(x => x.text).join(' ').trim();
+    const notes = (S.diagnosis && S.diagnosis.subjectNotes) || {};
+    const key = Object.keys(notes).find(x => normSub(x) === n);
+    return key ? (notes[key] || []).join(' ').trim() : '';
+  }
+  const DEEPEN_VERBS = ['탐구', '분석', '실험', '설계', '측정', '조사', '비교', '모델링', '발표', '정리'];
+  /* 기록의 활동 → 다음 단계로 넘어가는 연결 문장. 기록에 있는 동사만 쓴다(없는 활동을 지어내지 않는다) */
+  function deepenLine(note) {
+    const v = DEEPEN_VERBS.filter(x => note.includes(x));
+    return v.length
+      ? `기록에는 <b>${esc(v.slice(0, 3).join('·'))}</b>까지 남아 있습니다. 아래 주제는 그 다음 단계(원인 규명·조건 변화·적용 확장)로 이어집니다.`
+      : '아래 주제는 위 활동을 한 단계 더 끌고 가는 방향입니다.';
+  }
+
   function topicCard(subject, used) {
     const tf = topicFor(subject, used);
     if (tf && used) used.add(tf.topic.title);
@@ -1360,6 +1378,8 @@
     head.appendChild(re);
     box.appendChild(head);
     const flags = [];
+    const note = recordNoteFor(subject);
+    if (note) flags.push('<span class="tag-link">학생부 연계 심화</span>');
     if ((t.tags || []).includes('data') && activeGaps().some(g => g.kind === 'data'))
       flags.push('<span class="tag-gap">보완:정량 데이터 근거</span>');
     if (tf.area && areaOf(subject) && tf.area !== areaOf(subject))
@@ -1368,6 +1388,12 @@
     if (tf.area && areaOf(subject) && tf.area !== areaOf(subject))
       box.appendChild(el('div', { class: 'note', style: 'margin-top:6px;font-size:12px',
         text: `이 과목의 탐구 영역(${areaOf(subject)}) 주제가 이미 다른 과목에 배정되어, ${tf.area} 영역 주제를 가져왔습니다. 과목과의 연결 고리는 세특에서 직접 만들어야 합니다.` }));
+    /* ★ 업로드한 학생부에 이 과목 기록이 있으면, 새 주제가 아니라 '이어지는 심화 탐구'로 제시한다 */
+    if (note) box.appendChild(el('div', { class: 'linkbox', html:
+      `<b>📎 학생부에 남은 이 과목의 활동</b>
+       <div class="q">“${esc(note.slice(0, 220))}${note.length > 220 ? '…' : ''}”</div>
+       <b>→ 이어서 할 심화 탐구</b> ${deepenLine(note)}
+       <div class="note" style="margin-top:6px">세특에는 <b>“…에서 나아가 ~”</b>처럼 앞 활동과의 연결을 드러내 주세요. 같은 주제를 처음부터 다시 시작한 것처럼 쓰면 후속 탐구로 읽히지 않습니다.</div>` }));
     box.appendChild(el('div', { class: 'fld2', html: `<b>배경·동기</b> ${esc(t.background)}` }));
     box.appendChild(el('div', { class: 'fld2', html: `<b>핵심 질문</b> ${esc(t.question)}` }));
     const m = el('div', { class: 'fld2', html: '<b>탐구 방법</b>' });
@@ -1386,6 +1412,11 @@
     const picked = [...S.selected];
     if (!picked.length) { host.appendChild(el('p', { class: 'note', text: '과목을 하나 이상 선택한 뒤 [탐구 설계 생성]을 눌러 주세요.' })); return; }
 
+    const linked = picked.filter(x => recordNoteFor(x));
+    if (linked.length) host.appendChild(el('div', { class: 'gapbanner', html:
+      `<b>학생부에 기록이 있는 과목 ${linked.length}개는 '이어지는 심화 탐구'로 제시합니다</b><br>` +
+      `${esc(linked.slice(0, 8).join(', '))}${linked.length > 8 ? ' 외' : ''} — 새 주제를 처음부터 시작하지 않고, 기록에 남은 활동의 다음 단계로 설계했습니다.` }));
+
     const gaps = activeGaps();
     if (gaps.length) host.appendChild(el('div', { class: 'gapbanner', html:
       `<b>이 설계는 진단 보완점을 반영했습니다</b><br>${gaps.map(g => esc(g.label)).join(' · ')} — 탐구 방법에 데이터 분석을, 산출물에 발표를 우선 포함했습니다.` }));
@@ -1394,11 +1425,15 @@
     if (off.length) host.appendChild(el('div', { class: 'redesign', html:
       `<h4>권장 외 과목 중심 재설계</h4><p class="note">${esc(off.join(', '))} 을(를) 중심축으로 탐구를 다시 구성했습니다. 선택을 되돌릴 필요는 없고, 이 과목에서 진로와 만나는 지점을 만들면 됩니다.</p>` }));
 
-    /* 배정 순서 — 학과 핵심 과목 → 권장 과목 → 진로 교과군 → 나머지.
-       주제 풀이 과목 수보다 적을 수 있으므로 진로와 가까운 과목부터 가져간다. */
+    /* 배정 순서 — 공동교육과정·전문교과로 직접 이수한 과목 → 학과 핵심 → 권장 → 나머지.
+       ★ 직접 이수 과목을 맨 앞에 두는 이유: 학교 편제에 없는데도 학생이 따로 들은 과목이라
+         학생부에서 가장 크게 읽힌다. 주제 풀이 동나 이 과목이 빈칸으로 남으면
+         정작 가장 드러내야 할 이수 이력이 설계에서 사라진다. (예: 고급 생명과학) */
     const weight = x => {
+      if (S.manual.includes(x)) return -2;
       const l = recLevel(x);
-      return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) + (inFocus(x) ? 0 : 2);
+      /* 학생부에 기록이 남아 있는 과목은 '이어지는 심화 탐구'를 붙일 수 있으므로 먼저 배정한다 */
+      return (l === 'core' ? 0 : l === 'rec' ? 1 : 2) + (inFocus(x) ? 0 : 2) + (recordNoteFor(x) ? -1 : 0);
     };
     const ordered = picked.slice().sort((a, b) => weight(a) - weight(b));
 
@@ -1419,9 +1454,11 @@
     /* 주제 풀이 모자란 경우 — 같은 주제를 여러 과목에 반복해 붙이지 않고 정직하게 알린다 */
     if (exhausted.length) {
       const poolSize = Object.values((ctx() && ctx().topicPools) || {}).reduce((n, a) => n + a.length, 0);
+      const exManual = exhausted.filter(x => S.manual.includes(x));
       host.appendChild(el('div', { class: 'redesign', style: 'border-color:var(--accent);background:rgba(79,140,255,.08)', html:
         `<h4 style="color:var(--accent)">주제를 배정하지 않은 과목 ${exhausted.length}개</h4>` +
         `<p class="note">${esc(exhausted.join(', '))}</p>` +
+        (exManual.length ? `<p class="note" style="color:var(--warn);margin-top:6px"><b>공동교육과정·전문교과로 직접 이수한 과목(${esc(exManual.join(', '))})이 여기 있습니다.</b> 이 과목은 학생부에서 크게 읽히므로, 아래 주제 중 하나를 이 과목의 성취기준으로 다시 잡아 꼭 채워 주세요.</p>` : '') +
         `<p class="note" style="margin-top:8px">` +
         (S.program
           ? `<b>${esc(S.program.name)}</b>의 검증된 탐구 주제가 현재 <b>${poolSize}개</b>뿐이라, 위에 이미 배정한 주제와 겹치지 않는 주제가 남지 않았습니다. ` +
@@ -2287,12 +2324,24 @@
     r.appendChild(el('h2', { text: '5. 학교생활기록부 진단' }));
     if (!d) r.appendChild(el('p', { text: '생기부 진단을 수행하지 않았습니다. (STEP 3에서 진행할 수 있습니다)' }));
     else {
+      /* 축마다 강점과 보완점을 나눠 적는다. 보완점이 없으면 그 칸은 쓰지 않는다. */
       d.axes.forEach(a => {
-        r.appendChild(el('h3', { text: `${a.key} — ${a.level === 'hi' ? '강점' : a.level === 'mid' ? '보통' : '보완 필요'}` }));
-        const ul = el('ul');
-        a.ev.forEach(e => ul.appendChild(el('li', { html: '<b>[기록에서 확인됨]</b> ' + esc(e.text) + (e.quote ? `<br><span class="note">“${esc(e.quote)}”</span>` : '') })));
-        a.gap.forEach(g => ul.appendChild(el('li', { html: '<b>[보완 필요]</b> ' + esc(g.text) })));
-        r.appendChild(ul);
+        r.appendChild(el('h3', { text: `${a.key} (${esc(a.sub || '')})` }));
+        if ((a.ev || []).length) {
+          r.appendChild(el('p', { class: 'axlabel', html: '<b>강점</b> — 기록에서 확인된 것' }));
+          const ul = el('ul');
+          a.ev.forEach(e => ul.appendChild(el('li', { html:
+            esc(e.text) + (e.quote ? `<br><span class="note">“${esc(e.quote)}”</span>` : '') })));
+          r.appendChild(ul);
+        } else {
+          r.appendChild(el('p', { class: 'axlabel', html: '<b>강점</b> — 이 축에서 근거로 삼을 서술을 찾지 못했습니다.' }));
+        }
+        if ((a.gap || []).length) {
+          r.appendChild(el('p', { class: 'axlabel', html: '<b>보완점</b>' }));
+          const ul2 = el('ul');
+          a.gap.forEach(g => ul2.appendChild(el('li', { text: g.text })));
+          r.appendChild(ul2);
+        }
       });
       r.appendChild(el('h3', { text: '학교 편제에 비춘 해석' }));
       const ul2 = el('ul');
